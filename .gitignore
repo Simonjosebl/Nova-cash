@@ -8,6 +8,7 @@ dist/
 dist-ssr/
 build/
 *.local
+*.tsbuildinfo
 
 # Entorno / secretos (Cap. 9.18 / 11.4) — NUNCA versionar
 .env
