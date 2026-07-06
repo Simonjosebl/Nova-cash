@@ -1,0 +1,46 @@
+# Dependencias
+node_modules/
+.pnp/
+.pnp.js
+
+# Build
+dist/
+dist-ssr/
+build/
+*.local
+
+# Entorno / secretos (Cap. 9.18 / 11.4) — NUNCA versionar
+.env
+.env.*
+!.env.example
+
+# Supabase local
+supabase/.branches/
+supabase/.temp/
+**/.supabase/
+
+# Capacitor / nativo
+ios/App/Pods/
+ios/App/App/public/
+ios/App/build/
+android/
+*.mobileprovision
+*.p12
+*.cer
+
+# Logs y test
+*.log
+npm-debug.log*
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+
+# Editor / SO
+.DS_Store
+Thumbs.db
+*.suo
+.idea/
+
+# Assets generados (los originales SÍ se versionan; los derivados no)
+assets/generated/

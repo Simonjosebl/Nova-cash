@@ -1,0 +1,61 @@
+# Nova Cash · Supabase CLI (Cap. 5 / 11.5)
+# Un proyecto por ambiente (dev/stage/prod). Este archivo configura el entorno local
+# y sirve de base para `supabase link` con los proyectos remotos.
+
+project_id = "nova-cash"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[db.pooler]
+enabled = false
+
+[db.seed]
+enabled = true
+sql_paths = ["./seeds/seed.sql"]
+
+[studio]
+enabled = true
+port = 54323
+
+[inbucket] # Captura de correos en local (magic link, recuperación, invitaciones)
+enabled = true
+port = 54324
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+[auth]
+enabled = true
+site_url = "http://localhost:5173"
+additional_redirect_urls = ["http://localhost:5173", "http://localhost:5173/reset-password"]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+enable_confirmations = false # En prod: activar confirmación de correo (Cap. 9.4)
+double_confirm_changes = true
+
+# Apple Sign In (Cap. 9.4) — habilitar al configurar el proyecto iOS nativo.
+# [auth.external.apple]
+# enabled = true
+# client_id = "env(APPLE_CLIENT_ID)"
+# secret = "env(APPLE_SECRET)"
+
+[edge_runtime]
+enabled = true
+
+[functions.accept-invitation]
+verify_jwt = true

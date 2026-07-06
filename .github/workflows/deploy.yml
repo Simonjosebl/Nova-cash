@@ -1,0 +1,73 @@
+name: Deploy
+
+# Despliegue manual por ambiente (Cap. 11.9 — producción nunca automática, ADR-051).
+# Aplica migraciones + Edge Functions a Supabase y construye la web.
+# Requiere estos secrets en el repositorio (Settings → Secrets → Actions):
+#   SUPABASE_ACCESS_TOKEN     (token personal de Supabase CLI)
+#   SUPABASE_PROJECT_REF_STAGE / SUPABASE_PROJECT_REF_PROD
+#   SUPABASE_DB_PASSWORD_STAGE / SUPABASE_DB_PASSWORD_PROD
+#   VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY  (por ambiente, vía Environments)
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Ambiente destino
+        type: choice
+        options: [staging, production]
+        required: true
+
+jobs:
+  deploy:
+    name: Deploy (${{ inputs.environment }})
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # Calidad antes de desplegar (mismo gate que CI).
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test
+      - run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Seleccionar proyecto
+        run: |
+          if [ "${{ inputs.environment }}" = "production" ]; then
+            echo "PROJECT_REF=${{ secrets.SUPABASE_PROJECT_REF_PROD }}" >> "$GITHUB_ENV"
+            echo "DB_PASSWORD=${{ secrets.SUPABASE_DB_PASSWORD_PROD }}" >> "$GITHUB_ENV"
+          else
+            echo "PROJECT_REF=${{ secrets.SUPABASE_PROJECT_REF_STAGE }}" >> "$GITHUB_ENV"
+            echo "DB_PASSWORD=${{ secrets.SUPABASE_DB_PASSWORD_STAGE }}" >> "$GITHUB_ENV"
+          fi
+
+      - name: Aplicar migraciones + Edge Functions
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          supabase link --project-ref "$PROJECT_REF" --password "$DB_PASSWORD"
+          supabase db push --password "$DB_PASSWORD"
+          supabase functions deploy accept-invitation
+
+      # El artefacto web (dist/) se publica donde corresponda (Vercel/Netlify/CDN)
+      # o se sincroniza con Capacitor para el build iOS (Cap. 11.3). Paso a completar
+      # según el hosting elegido.
+      - name: Artefacto web
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-${{ inputs.environment }}
+          path: dist

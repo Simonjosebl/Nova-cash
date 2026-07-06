@@ -1,0 +1,11 @@
+dist
+coverage
+node_modules
+ios
+android
+public/*.ico
+*.png
+*.jpeg
+*.jpg
+package-lock.json
+PRODUCT.MD

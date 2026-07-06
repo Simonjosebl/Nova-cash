@@ -1,0 +1,111 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/**
+ * Design System — Nova Cash (Cap. 3).
+ * Tokens semánticos en HSL derivados de la paleta Nova.
+ * El bloque .dark queda PREPARADO (Cap. 3.24) pero NO se activa en el MVP.
+ */
+@layer base {
+  :root {
+    /* Neutros */
+    --background: 210 40% 98%; /* #F8FAFC */
+    --foreground: 221 39% 11%; /* #111827 Text primary */
+    --card: 0 0% 100%; /* #FFFFFF Surface */
+    --card-foreground: 221 39% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 221 39% 11%;
+
+    /* Primary = Nova Navy (#0F172A) — header, botón principal, tabs activas */
+    --primary: 222 47% 11%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary = superficie suave */
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+
+    /* Muted / texto secundario (#6B7280) */
+    --muted: 210 40% 96%;
+    --muted-foreground: 220 9% 46%;
+
+    /* Accent = Nova Cyan (#06B6D4) — estados activos */
+    --accent: 189 94% 43%;
+    --accent-foreground: 0 0% 100%;
+
+    /* Destructive = Nova Red (#EF4444) — SOLO errores, nunca gastos */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Success = Nova Green (#22C55E) — ingresos, metas, éxitos */
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+
+    /* Warning = Nova Orange (#F59E0B) — advertencias, pagos próximos */
+    --warning: 38 92% 50%;
+    --warning-foreground: 222 47% 11%;
+
+    /* Bordes / inputs / focus (#E5E7EB / Nova Blue) */
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 221 83% 53%; /* Nova Blue #2563EB */
+
+    /* Radio base = botones (16px, Cap. 3.10) */
+    --radius: 1rem;
+  }
+
+  /* Dark Mode — preparado, no activado en MVP */
+  .dark {
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+    --card: 222 44% 14%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 44% 14%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222 47% 11%;
+    --secondary: 217 33% 20%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 33% 20%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 189 94% 43%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 74% 55%;
+    --destructive-foreground: 210 40% 98%;
+    --success: 142 71% 45%;
+    --success-foreground: 222 47% 11%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 222 47% 11%;
+    --border: 217 33% 24%;
+    --input: 217 33% 24%;
+    --ring: 221 83% 53%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply bg-background font-sans text-foreground antialiased;
+    /* Safe areas para iOS (Capacitor) */
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+      env(safe-area-inset-left);
+  }
+
+  /* Accesibilidad (Cap. 3.22): respetar la preferencia de menos movimiento. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

@@ -1,0 +1,122 @@
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Link, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Users } from 'lucide-react';
+import { Button } from '@/shared/ui/button';
+import { TextField } from '@/shared/ui/text-field';
+import { Label } from '@/shared/ui/label';
+import { Select } from '@/shared/ui/select';
+import { getErrorMessage } from '@/shared/types/app-error';
+import { ROUTES } from '@/shared/constants/routes';
+import { FormError } from '@/modules/auth/components/FormError';
+import { FormSuccess } from '@/modules/auth/components/FormSuccess';
+import { EmojiPicker } from '../components/EmojiPicker';
+import { updateWorkspaceSchema, type UpdateWorkspaceInput } from '../schemas/workspace.schema';
+import { useActiveWorkspace } from '../hooks/useWorkspaces';
+import { useUpdateWorkspace, useDeleteWorkspace } from '../hooks/useWorkspaceMutations';
+import { CURRENCIES, WORKSPACE_TYPES } from '../constants/workspace.constants';
+
+/** Configuración del Workspace (Cap. 6.18). Editar identidad; eliminar (admin). */
+export function WorkspaceSettingsPage() {
+  const navigate = useNavigate();
+  const { active } = useActiveWorkspace();
+  const isAdmin = active?.role === 'admin';
+
+  const update = useUpdateWorkspace(active?.id ?? '');
+  const remove = useDeleteWorkspace();
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useForm<UpdateWorkspaceInput>({
+    resolver: zodResolver(updateWorkspaceSchema),
+    values: active
+      ? { name: active.name, emoji: active.emoji, type: active.type, currency: active.currency }
+      : undefined,
+  });
+
+  if (!active) return null;
+  const emoji = watch('emoji') ?? active.emoji;
+
+  const onSubmit = handleSubmit((data) => update.mutate(data));
+
+  const onDelete = () => {
+    if (window.confirm('¿Eliminar este espacio? Podrás recuperarlo contactando soporte.')) {
+      remove.mutate(active.id, { onSuccess: () => navigate(ROUTES.home, { replace: true }) });
+    }
+  };
+
+  return (
+    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col gap-6 px-6 py-8">
+      <header className="flex items-center gap-3">
+        <Button variant="ghost" size="icon" asChild aria-label="Volver">
+          <Link to={ROUTES.home}>
+            <ArrowLeft />
+          </Link>
+        </Button>
+        <h1 className="text-h3 font-bold text-primary">Configuración</h1>
+      </header>
+
+      <Button variant="secondary" asChild>
+        <Link to={ROUTES.members}>
+          <Users />
+          Colaboradores
+        </Link>
+      </Button>
+
+      <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
+        {update.isError ? <FormError message={getErrorMessage(update.error)} /> : null}
+        {update.isSuccess ? <FormSuccess message="Espacio actualizado." /> : null}
+
+        <TextField
+          label="Nombre"
+          disabled={!isAdmin}
+          error={errors.name?.message}
+          {...register('name')}
+        />
+
+        <div className="flex flex-col gap-2">
+          <Label>Emoji</Label>
+          <EmojiPicker value={emoji} onChange={(e) => setValue('emoji', e)} />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="type">Tipo</Label>
+          <Select id="type" disabled={!isAdmin} {...register('type')}>
+            {WORKSPACE_TYPES.map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.emoji} {t.label}
+              </option>
+            ))}
+          </Select>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="currency">Moneda</Label>
+          <Select id="currency" disabled={!isAdmin} {...register('currency')}>
+            {CURRENCIES.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.label}
+              </option>
+            ))}
+          </Select>
+        </div>
+
+        {isAdmin ? (
+          <Button type="submit" disabled={update.isPending}>
+            {update.isPending ? 'Guardando…' : 'Guardar cambios'}
+          </Button>
+        ) : null}
+      </form>
+
+      {isAdmin ? (
+        <Button variant="danger" onClick={onDelete} disabled={remove.isPending}>
+          Eliminar espacio
+        </Button>
+      ) : null}
+    </main>
+  );
+}

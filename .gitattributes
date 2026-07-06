@@ -1,0 +1,10 @@
+# Normaliza saltos de línea a LF (Prettier usa endOfLine: 'lf'). Evita CRLF en Windows.
+* text=auto eol=lf
+
+# Binarios: sin conversión
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.woff binary
+*.woff2 binary
