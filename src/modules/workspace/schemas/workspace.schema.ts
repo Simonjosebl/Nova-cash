@@ -19,8 +19,6 @@ export const updateWorkspaceSchema = z.object({
 
 export const inviteMemberSchema = z.object({
   email: z.string().min(1, 'El correo es obligatorio.').email('Correo no válido.'),
-  // El admin no se invita; solo editor o lector.
-  role: z.enum(['editor', 'viewer']),
 });
 
 export const workspaceSettingsSchema = z.object({

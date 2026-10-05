@@ -7,8 +7,7 @@ import type {
   UpdateAccountDTO,
 } from '../types/account.types';
 
-const COLS =
-  'id,workspace_id,name,emoji,type,currency,opening_balance,current_balance,color,position,is_archived';
+const COLS = 'id,workspace_id,name,emoji,type,currency,current_balance,color,position';
 
 interface AccountRow {
   id: string;
@@ -17,11 +16,9 @@ interface AccountRow {
   emoji: string;
   type: AccountType;
   currency: string;
-  opening_balance: number | string;
   current_balance: number | string;
   color: string | null;
   position: number;
-  is_archived: boolean;
 }
 
 function mapAccount(row: AccountRow): Account {
@@ -32,35 +29,29 @@ function mapAccount(row: AccountRow): Account {
     emoji: row.emoji,
     type: row.type,
     currency: row.currency,
-    openingBalance: Number(row.opening_balance),
     currentBalance: Number(row.current_balance),
     color: row.color,
     position: row.position,
-    isArchived: row.is_archived,
   };
 }
 
 export interface CreateAccountParams extends CreateAccountDTO {
-  currency: string;
   position: number;
 }
 
 export interface IAccountRepository {
-  list(workspaceId: string, archived: boolean): Promise<Account[]>;
+  list(workspaceId: string): Promise<Account[]>;
   create(workspaceId: string, params: CreateAccountParams): Promise<Account>;
   update(id: string, dto: UpdateAccountDTO): Promise<Account>;
-  setArchived(id: string, archived: boolean): Promise<void>;
   softDelete(id: string): Promise<void>;
-  setPosition(id: string, position: number): Promise<void>;
 }
 
 export class AccountRepository implements IAccountRepository {
-  async list(workspaceId: string, archived: boolean): Promise<Account[]> {
+  async list(workspaceId: string): Promise<Account[]> {
     const { data, error } = await supabase
       .from('accounts')
       .select(COLS)
       .eq('workspace_id', workspaceId)
-      .eq('is_archived', archived)
       .order('position', { ascending: true });
     if (error) throw toAppError(error, 'No pudimos cargar las cuentas.');
     return ((data ?? []) as AccountRow[]).map(mapAccount);
@@ -75,8 +66,6 @@ export class AccountRepository implements IAccountRepository {
         emoji: params.emoji,
         type: params.type,
         currency: params.currency,
-        opening_balance: params.openingBalance,
-        current_balance: params.openingBalance,
         color: params.color ?? null,
         position: params.position,
       })
@@ -97,25 +86,9 @@ export class AccountRepository implements IAccountRepository {
     return mapAccount(data as AccountRow);
   }
 
-  async setArchived(id: string, archived: boolean): Promise<void> {
-    const { error } = await supabase
-      .from('accounts')
-      .update({ is_archived: archived })
-      .eq('id', id);
-    if (error) throw toAppError(error, 'No pudimos archivar la cuenta.');
-  }
-
   async softDelete(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('accounts')
-      .update({ deleted_at: new Date().toISOString() })
-      .eq('id', id);
+    const { error } = await supabase.rpc('soft_delete_record', { p_table: 'accounts', p_id: id });
     if (error) throw toAppError(error, 'No pudimos eliminar la cuenta.');
-  }
-
-  async setPosition(id: string, position: number): Promise<void> {
-    const { error } = await supabase.from('accounts').update({ position }).eq('id', id);
-    if (error) throw toAppError(error, 'No pudimos reordenar las cuentas.');
   }
 }
 

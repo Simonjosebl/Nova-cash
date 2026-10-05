@@ -172,10 +172,10 @@ export class CalendarRepository implements ICalendarRepository {
   }
 
   async softDelete(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('calendar_events')
-      .update({ deleted_at: new Date().toISOString() })
-      .eq('id', id);
+    const { error } = await supabase.rpc('soft_delete_record', {
+      p_table: 'calendar_events',
+      p_id: id,
+    });
     if (error) throw toAppError(error, 'No pudimos eliminar el evento.');
   }
 }

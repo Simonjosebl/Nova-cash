@@ -3,7 +3,12 @@ import { z } from 'zod';
 /** Validaciones de autenticación (Cap. 6.4 / 7 — RHF + Zod). Mensajes humanos en español. */
 
 const email = z.string().min(1, 'El correo es obligatorio.').email('Correo no válido.');
-const password = z.string().min(8, 'La contraseña debe tener al menos 8 caracteres.');
+const password = z
+  .string()
+  .min(10, 'La contraseña debe tener al menos 10 caracteres.')
+  .max(72, 'La contraseña es demasiado larga.')
+  .regex(/[A-Za-z]/, 'Incluye al menos una letra.')
+  .regex(/\d/, 'Incluye al menos un número.');
 
 export const loginSchema = z.object({
   email,
@@ -16,13 +21,14 @@ export const registerSchema = z
     email,
     password,
     confirmPassword: z.string().min(1, 'Confirma tu contraseña.'),
+    acceptPolicies: z.boolean().refine((value) => value, {
+      message: 'Debes aceptar la Política de Tratamiento de Datos y los Términos.',
+    }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Las contraseñas no coinciden.',
     path: ['confirmPassword'],
   });
-
-export const magicLinkSchema = z.object({ email });
 
 export const forgotPasswordSchema = z.object({ email });
 
@@ -42,7 +48,6 @@ export const updateProfileSchema = z.object({
 
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
-export type MagicLinkInput = z.infer<typeof magicLinkSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;

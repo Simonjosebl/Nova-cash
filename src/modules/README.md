@@ -4,7 +4,9 @@ Cada módulo es **independiente** y sigue **exactamente** la misma estructura. N
 
 ## Módulos (Cap. 2.9)
 
-`auth · workspace · dashboard · accounts · categories · transactions · calendar · budgets · goals · reports · notifications · settings · profile`
+`auth · workspace · dashboard · accounts · categories · transactions · calendar · budgets · goals · reports · notifications · settings · profile · legal`
+
+_(`legal` — Política de Privacidad y Términos, páginas públicas. Ver Resolución R-05.)_
 
 _(Collaborators — Fase 11 — vive dentro de `workspace/` por ser gestión de miembros/invitaciones.)_
 

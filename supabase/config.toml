@@ -27,7 +27,7 @@ sql_paths = ["./seeds/seed.sql"]
 enabled = true
 port = 54323
 
-[inbucket] # Captura de correos en local (magic link, recuperación, invitaciones)
+[local_smtp] # Captura de correos en local (recuperación, confirmación)
 enabled = true
 port = 54324
 
@@ -42,11 +42,48 @@ additional_redirect_urls = ["http://localhost:5173", "http://localhost:5173/rese
 jwt_expiry = 3600
 enable_refresh_token_rotation = true
 enable_signup = true
+# Contraseñas: mínimo 10 con letras y números (igual que la validación del cliente — R-18).
+minimum_password_length = 10
+password_requirements = "letters_digits"
+
+# Límites anti-abuso de Auth (por IP/hora). Ajustar en el dashboard del proyecto alojado.
+[auth.rate_limit]
+email_sent = 30
+sign_in_sign_ups = 30
+token_verifications = 30
+token_refresh = 150
 
 [auth.email]
 enable_signup = true
-enable_confirmations = false # En prod: activar confirmación de correo (Cap. 9.4)
+enable_confirmations = true # Obligatorio: protege invitaciones y evita suplantación (R-18)
 double_confirm_changes = true
+
+# Correos de Auth en español y con la marca (R-11). En el proyecto alojado se pegan en
+# Authentication → Email Templates (ver docs/devops/SETUP.md).
+[auth.email.template.recovery]
+subject = "Restablece tu contraseña de Nova Cash"
+content_path = "./supabase/templates/recovery.html"
+
+[auth.email.template.confirmation]
+subject = "Confirma tu cuenta de Nova Cash"
+content_path = "./supabase/templates/confirmation.html"
+
+# SMTP propio (Resend) para que los correos lleguen a cualquier destinatario (R-11).
+[auth.email.smtp]
+enabled = true
+host = "smtp.resend.com"
+port = 465
+user = "resend"
+pass = "env(RESEND_API_KEY)"
+admin_email = "env(EMAIL_FROM_ADDRESS)"
+sender_name = "Nova Cash"
+
+# Google OAuth (Resolución R-03). Credenciales solo por variables de entorno.
+[auth.external.google]
+enabled = true
+client_id = "env(GOOGLE_CLIENT_ID)"
+secret = "env(GOOGLE_CLIENT_SECRET)"
+skip_nonce_check = false # Solo se necesita en login nativo de un toque (R-18)
 
 # Apple Sign In (Cap. 9.4) — habilitar al configurar el proyecto iOS nativo.
 # [auth.external.apple]
@@ -58,4 +95,7 @@ double_confirm_changes = true
 enabled = true
 
 [functions.accept-invitation]
+verify_jwt = true
+
+[functions.send-invitation]
 verify_jwt = true

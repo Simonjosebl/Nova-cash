@@ -106,7 +106,7 @@ export function CalendarPage() {
                   setDetail(e);
                   setSelectedDate(null);
                 }}
-                className="flex items-center gap-3 rounded-md border border-input bg-card px-4 py-3 text-left active:scale-[0.99]"
+                className="flex items-center gap-3 rounded-md border border-input bg-card px-4 py-3 text-left shadow-card-glow active:scale-[0.99] dark:shadow-card-glow-dark"
               >
                 <span className="text-2xl">{e.emoji}</span>
                 <span className="flex-1 text-body text-foreground">{e.title}</span>

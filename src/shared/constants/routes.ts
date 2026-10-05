@@ -3,9 +3,11 @@ export const ROUTES = {
   // Públicas (auth)
   login: '/login',
   register: '/register',
-  magicLink: '/magic-link',
   forgotPassword: '/forgot-password',
   resetPassword: '/reset-password',
+  // Públicas (legales, con o sin sesión — R-05)
+  privacy: '/privacidad',
+  terms: '/terminos',
   // Privadas
   home: '/',
   transactions: '/transactions',
@@ -17,6 +19,7 @@ export const ROUTES = {
   budgets: '/budgets',
   goals: '/goals',
   notifications: '/notifications',
+  reminders: '/recordatorios',
   createWorkspace: '/workspace/new',
   workspaceSettings: '/workspace/settings',
   members: '/workspace/members',

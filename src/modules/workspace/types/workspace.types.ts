@@ -39,6 +39,8 @@ export interface WorkspaceInvitation {
   status: InvitationStatus;
   expiresAt: string;
   createdAt: string;
+  /** Solo visible para administradores (RLS); arma el enlace para compartir (R-11). */
+  token: string;
 }
 
 export interface WorkspaceSettings {
@@ -68,4 +70,9 @@ export interface UpdateWorkspaceDTO {
 export interface InviteMemberDTO {
   email: string;
   role: MemberRole;
+}
+
+/** Lo que ingresa quien invita: solo el correo (el rol es siempre editor — R-11). */
+export interface InviteInput {
+  email: string;
 }

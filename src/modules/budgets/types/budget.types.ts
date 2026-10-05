@@ -6,6 +6,8 @@ export interface Budget {
   workspaceId: string;
   categoryId: string;
   amount: number;
+  /** Moneda propia del presupuesto (R-08). */
+  currency: string;
   period: BudgetPeriod;
   warningPercentage: number;
   categoryName: string;
@@ -23,10 +25,12 @@ export interface BudgetProgress extends Budget {
 export interface CreateBudgetDTO {
   categoryId: string;
   amount: number;
+  currency: string;
   warningPercentage: number;
 }
 
 export interface UpdateBudgetDTO {
   amount?: number;
+  currency?: string;
   warningPercentage?: number;
 }

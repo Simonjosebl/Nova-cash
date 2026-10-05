@@ -15,7 +15,9 @@ const parsed = envSchema.safeParse(import.meta.env);
 
 if (!parsed.success) {
   // No exponer detalles sensibles; solo advertir en desarrollo (Cap. 9.17).
-  console.error('Variables de entorno inválidas:', parsed.error.flatten().fieldErrors);
+  if (import.meta.env.DEV) {
+    console.error('Variables de entorno inválidas:', parsed.error.flatten().fieldErrors);
+  }
   throw new Error('Configuración de entorno inválida.');
 }
 

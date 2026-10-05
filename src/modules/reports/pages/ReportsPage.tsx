@@ -18,7 +18,7 @@ export function ReportsPage() {
   const currency = active?.currency ?? 'COP';
   const [period, setPeriod] = useState<ReportPeriod>('this_month');
 
-  const { data, isLoading } = useReport(workspaceId, period);
+  const { data, isLoading } = useReport(workspaceId, currency, period);
 
   return (
     <div className="flex flex-col gap-5">

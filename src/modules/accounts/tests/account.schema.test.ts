@@ -2,14 +2,14 @@ import { describe, it, expect } from 'vitest';
 import { createAccountSchema } from '../schemas/account.schema';
 
 describe('createAccountSchema', () => {
-  const base = { name: 'Banco', emoji: '🏦', type: 'bank' as const, openingBalance: 100 };
+  const base = { name: 'Banco', emoji: '🏦', type: 'bank' as const, currency: 'COP' };
 
   it('acepta una cuenta válida', () => {
     expect(createAccountSchema.safeParse(base).success).toBe(true);
   });
 
-  it('rechaza saldo negativo', () => {
-    expect(createAccountSchema.safeParse({ ...base, openingBalance: -1 }).success).toBe(false);
+  it('exige una moneda ISO válida', () => {
+    expect(createAccountSchema.safeParse({ ...base, currency: 'pesos' }).success).toBe(false);
   });
 
   it('rechaza nombre corto', () => {

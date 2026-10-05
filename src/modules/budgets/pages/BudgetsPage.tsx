@@ -36,7 +36,7 @@ export function BudgetsPage() {
   };
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col gap-6 px-6 py-8">
+    <div className="flex flex-col gap-6">
       <header className="flex items-center gap-3">
         <Button variant="ghost" size="icon" asChild aria-label="Volver">
           <Link to={ROUTES.home}>
@@ -89,7 +89,7 @@ export function BudgetsPage() {
               <ProgressBar percent={b.percent} barClass={BUDGET_STATUS_BAR[b.status]} />
               <div className="flex justify-between text-caption text-muted-foreground">
                 <span>
-                  {formatMoney(b.spent, currency)} de {formatMoney(b.amount, currency)}
+                  {formatMoney(b.spent, b.currency)} de {formatMoney(b.amount, b.currency)}
                 </span>
                 <span className={BUDGET_STATUS_TEXT[b.status]}>
                   {BUDGET_STATUS_LABELS[b.status]}
@@ -118,6 +118,6 @@ export function BudgetsPage() {
           takenCategoryIds={budgets.map((b) => b.categoryId)}
         />
       ) : null}
-    </main>
+    </div>
   );
 }

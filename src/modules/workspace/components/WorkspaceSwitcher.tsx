@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Check, ChevronDown, Plus } from 'lucide-react';
+import { Check, ChevronDown, Settings2 } from 'lucide-react';
 import { ROUTES } from '@/shared/constants/routes';
 import { cn } from '@/lib/utils';
 import { useActiveWorkspace } from '../hooks/useWorkspaces';
 
-/** Selector de Workspace activo (Cap. 6.6 — Resolución R-01, multi-workspace). */
+/**
+ * Selector de Workspace activo (Cap. 6.6 — R-01). Solo ver y cambiar; crear, editar y
+ * eliminar se hace en la cuenta (R-12).
+ */
 export function WorkspaceSwitcher() {
   const { active, workspaces, setActive } = useActiveWorkspace();
   const [open, setOpen] = useState(false);
@@ -59,12 +62,12 @@ export function WorkspaceSwitcher() {
               </button>
             ))}
             <Link
-              to={ROUTES.createWorkspace}
+              to={`${ROUTES.profile}#espacios`}
               onClick={() => setOpen(false)}
               className="mt-1 flex items-center gap-2 rounded-sm px-2 py-2 text-body text-nova-blue hover:bg-secondary"
             >
-              <Plus className="size-4" />
-              Crear espacio
+              <Settings2 className="size-4" />
+              Gestionar espacios
             </Link>
           </div>
         </>

@@ -2703,9 +2703,11 @@ Dynamic Type preparado.
 
 # Dark Mode
 
-No incluido en el MVP.
+Activado (ver Resolución R-02, actualización).
 
-Toda la arquitectura debe permitir activarlo posteriormente.
+El usuario alterna entre tema claro y oscuro con un switch (sol / luna) disponible en las pantallas de autenticación y en Perfil. Si nunca eligió, se respeta la preferencia del sistema. La elección se recuerda en el dispositivo.
+
+El tema oscuro usa exclusivamente los tokens semánticos (`.dark`), con fondo Nova Navy profundo, superficies elevadas y Nova Cyan como acento. Nunca colores directos.
 
 ---
 
@@ -4898,9 +4900,9 @@ Métodos.
 
 Email.
 
-Apple ID (iOS).
+Google ("Continuar con Google", ver Resolución R-03).
 
-Google (futuro).
+Apple ID (iOS).
 
 Después del Login.
 
@@ -7058,12 +7060,11 @@ Supabase Auth.
 Métodos del MVP:
 
 - Email + contraseña.
-- Magic Link.
+- Google (OAuth, Resolución R-03).
 - Apple Sign In (iOS).
 
 Futuro:
 
-- Google.
 - Microsoft.
 
 ---
@@ -9065,7 +9066,7 @@ Entregables
 
 ✓ Registro
 
-✓ Magic Link
+✓ Ingreso con Google (reemplaza Magic Link — R-03)
 
 ✓ Recuperación contraseña
 
@@ -9533,7 +9534,7 @@ El MVP soporta que un usuario pertenezca a y alterne entre múltiples Workspaces
 
 ADR-064
 
-El tema oscuro se prepara a nivel de arquitectura (tokens, clase `.dark`, store de tema) pero NO se activa en la UI del MVP.
+El tema oscuro se prepara a nivel de arquitectura (tokens, clase `.dark`, store de tema). Actualización: se activa en la UI mediante un switch de tema (Resolución R-02, actualización).
 
 ---
 
@@ -9561,6 +9562,144 @@ Cada Workspace sigue siendo un universo aislado (Cap. 4.1); "multi-Workspace" di
 **Contexto.** El Cap. 3.24 indica que el Dark Mode no se incluye en el MVP; la Fase 0 (Cap. 12.5) listaba "Tema oscuro" como entregable.
 
 **Resolución.** En Fase 0 se prepara la **infraestructura** de tema (variables/tokens en `:root` y `.dark`, store de tema en Zustand). La **UI oscura no se activa** en el MVP; queda lista para habilitarse en una versión posterior sin refactorizar.
+
+**Actualización (2026-09-27).** Por decisión de producto se **activa** el Dark Mode:
+
+- Switch de tema (sol / luna) en las pantallas de autenticación y en Perfil (fila "Apariencia").
+- Sin elección previa se usa `prefers-color-scheme`; la elección se persiste en el dispositivo (store de tema).
+- La clase `.dark` se aplica en `<html>` antes del primer render para evitar parpadeo.
+- Solo tokens semánticos; ningún componente usa colores directos para el tema.
+
+## R-03 — Google reemplaza Magic Link
+
+**Contexto.** El Cap. 9.4 listaba Magic Link en el MVP y Google como futuro.
+
+**Resolución (2026-09-27).** Por decisión de producto se **elimina Magic Link** y se **incorpora Google** como método de ingreso del MVP:
+
+- Botón "Continuar con Google" como primera opción en Login y Registro, seguido de un separador "o con tu correo" y el formulario de email + contraseña (patrón de apps profesionales).
+- Flujo OAuth de Supabase Auth (`signInWithOAuth`, proveedor `google`); al volver, la sesión se detecta en la URL y el usuario continúa al Dashboard (u onboarding de Workspace).
+- El nombre y avatar se toman de los metadatos de Google.
+- Excepción de Design System: el logotipo "G" conserva sus colores oficiales según las guías de marca de Google; el botón usa tokens (`card`, `border`, `foreground`).
+- Las credenciales OAuth (Client ID / Secret) se configuran solo en Supabase (Authentication → Providers → Google), nunca en el Frontend.
+
+## R-04 — Diseño de las pantallas de autenticación
+
+**Resolución (2026-09-27).** Login, Registro y Recuperación comparten un layout de dos capas:
+
+- **Hero** superior con gradiente de marca (Nova Navy → Nova Blue → Nova Cyan), formas decorativas diagonales translúcidas, logo y wordmark; el switch de tema vive arriba a la derecha.
+- **Hoja** inferior (token `surface-tint` #E6F0FF: azul muy claro en tema claro, navy profundo en oscuro; radio 32 superior) que se superpone al hero y contiene título, ingreso con Google, separador "o con tu correo" y formulario.
+- Campos con icono inicial (Mail, candado, usuario) y botón para mostrar/ocultar contraseña; el label sigue siendo externo (Cap. 3.18).
+- En pantallas anchas el layout se muestra como una tarjeta centrada; en móvil ocupa toda la pantalla.
+
+## R-05 — Política de Privacidad, Términos y autorización de datos
+
+**Contexto.** El ingreso con Google (R-03) exige URLs públicas de Política de Privacidad y Condiciones del Servicio en la pantalla de consentimiento OAuth. La Ley 1581 de 2012 (Colombia) exige autorización previa, expresa e informada para el tratamiento de datos personales.
+
+**Resolución (2026-09-27).**
+
+- Nuevo módulo `legal` (misma estructura estándar) con dos páginas **públicas**, accesibles con o sin sesión: `/privacidad` (Política de Privacidad y Tratamiento de Datos) y `/terminos` (Términos y Condiciones). Ambas comparten un layout con pestañas para alternar entre documentos.
+- La Política incluye la declaración de **Uso Limitado** de la Política de Datos de Usuario de los Servicios de API de Google.
+- **Registro con correo:** casilla obligatoria "Acepto la Política de Tratamiento de Datos y los Términos". Sin marcarla no se puede crear la cuenta.
+- **Ingreso con Google:** bajo el botón se informa que al continuar se aceptan ambos documentos (con enlaces).
+- **Evidencia de la autorización:** al registrarse se guardan en los metadatos del usuario la versión de los documentos aceptada (`policies_version`) y la fecha (`policies_accepted_at`).
+- Datos del responsable (nombre, correo de contacto, versión y fecha de vigencia) centralizados en `src/shared/constants/legal.ts`.
+
+## R-06 — Responsive: móvil y computador
+
+**Contexto.** El Cap. 3.23 (Responsive) no definía el comportamiento en pantallas grandes; la app se veía como una columna de móvil en computador.
+
+**Resolución (2026-09-28).**
+
+- **Móvil (< 1024 px):** Bottom Tab de cinco pestañas en columnas iguales, altura fija de 64 px, etiquetas de 11 px sin cortes e indicador Nova Cyan en la pestaña activa. FAB centrado justo encima del Bottom Tab.
+- **Computador (≥ 1024 px):** el Bottom Tab y el FAB se reemplazan por una **barra lateral** fija (256 px) con logo, botón "Registrar movimiento" (gradiente de marca), las cinco secciones principales, una sección "Gestión" (Cuentas, Categorías, Presupuestos, Metas, Colaboradores) y el switch de tema.
+- El contenido se ensancha progresivamente (móvil 448 px → tablet 672 px → computador 896 px). En el Dashboard, las secciones inferiores se distribuyen en dos columnas en computador.
+- Los Bottom Sheets se muestran como modales centrados en pantallas ≥ 640 px.
+- Perfil y las pantallas de gestión viven dentro del mismo layout, para conservar la navegación en todas las pantallas.
+
+## R-07 — Sin diálogos nativos del navegador
+
+**Resolución (2026-09-28).** Prohibido usar `window.alert`, `window.confirm` y `window.prompt`: muestran "localhost dice" y rompen la experiencia de app.
+
+- Las confirmaciones usan el **Modal de confirmación** de la app (`ConfirmDialog`, vía `useConfirm()`): emoji de identidad, título, descripción y botones "Cancelar" / acción (rojo si es destructiva). Se cierra con Escape o tocando el fondo; el foco inicia en "Cancelar".
+- Todo **Bottom Sheet** muestra un encabezado fijo con título y botón **X** para cerrar; también se cierra con Escape, tocando el fondo o arrastrando la manija. El contenido se desplaza bajo el encabezado.
+
+## R-08 — Campos de monto, porcentaje y moneda
+
+**Resolución (2026-10-03).**
+
+- **Amount Input:** campo de texto numérico (teclado numérico en móvil) con separador de miles es-CO mientras se escribe ("1.250.000"); vacío cuando el valor es 0 (placeholder "0"), sin flechas nativas y conservando la posición del cursor.
+- **Percent Input:** el símbolo % va pegado al número y lo sigue al escribir; solo enteros de 0 a 100.
+- **Moneda predeterminada:** se elige al crear el espacio (onboarding) y el administrador puede cambiarla en cualquier momento en Configuración. Cambiarla **no convierte** los montos existentes (sin multimoneda automática); la interfaz lo advierte.
+- **Catálogo:** todas las monedas vigentes del mundo (ISO 4217), con nombre en español, símbolo y **bandera del país** (SVG de `flag-icons`, licencia MIT; los emojis de bandera no se ven en Windows). Selector con buscador por país, nombre o código y sugeridas LatAm primero.
+- **Moneda por cuenta y por presupuesto:** cada cuenta y cada presupuesto eligen su moneda (por defecto, la predeterminada). La moneda de una cuenta no cambia después de crearla. Un presupuesto solo suma gastos de cuentas en su misma moneda.
+- **Totales:** saldo del Dashboard, ingresos/gastos del mes, reportes e insights de presupuesto se calculan en la moneda predeterminada. En Cuentas, el saldo se muestra por moneda, sin mezclarlas.
+- Perfil y Configuración se ubican arriba a la derecha en computador (barra superior); en móvil, Perfil sigue en el Bottom Tab.
+
+## R-09 — Cuentas y eliminación
+
+**Resolución (2026-10-03).**
+
+- **Sin saldo inicial:** toda cuenta nace en 0; sube con ingresos y baja con gastos. Un saldo negativo solo aparece cuando se gasta más de lo que la cuenta tiene.
+- **Sin archivar ni reordenar:** se eliminan la función de archivar cuentas y las flechas para reordenarlas (se listan en orden de creación).
+- **Eliminación (soft delete) vía RPC:** las políticas SELECT filtran `deleted_at is null`, por lo que un UPDATE directo de `deleted_at` es rechazado por RLS. Toda eliminación usa las funciones SECURITY DEFINER `soft_delete_record(tabla, id)` (rol editor) y `soft_delete_workspace(id)` (admin), que validan permisos en el servidor.
+- **Eliminar una cuenta** elimina también sus movimientos (incluidos traslados que la involucran); el trigger de saldos revierte cada efecto y dejan de contar en saldos y reportes.
+
+## R-10 — Selector de emojis completo
+
+**Resolución (2026-10-03).** Además de los sugeridos de cada dominio, el selector incluye el catálogo completo de teclado (Unicode hasta la versión 15.1, ~1.870 emojis; se omiten versiones más nuevas que muchos teléfonos aún no muestran) con buscador en español y categorías. Datos: `emojibase-data` (licencia MIT), cargados bajo demanda. Cada dispositivo dibuja los emojis con su estilo nativo.
+
+## R-11 — Correos e invitaciones
+
+**Resolución (2026-10-03).**
+
+- **Proveedor de correo:** Resend. La Edge Function `send-invitation` (cumple el rol de `send-email` del Cap. 5.15) usa su API; Supabase Auth usa su SMTP (smtp.resend.com) para recuperación y confirmación. El SMTP de prueba de Supabase no se usa: solo entrega al equipo del proyecto y con límite por hora. Sin dominio propio se admite **SMTP** (p. ej. Gmail con contraseña de aplicación, puerto 465) tanto para Supabase Auth como para `send-invitation` (secretos `SMTP_HOST`, `SMTP_USER`, `SMTP_PASSWORD`, previstos en el Cap. 9.18); si existe `RESEND_API_KEY`, la función usa Resend.
+- **Invitaciones:** al invitar se crea la invitación y se envía un correo con el enlace `/invite/{token}` (el token nunca llega al navegador de quien invita). Solo un administrador puede enviar o **reenviar**. Si el correo falla, la invitación queda pendiente y se puede reenviar.
+- **Compartir enlace:** cada invitación pendiente ofrece "Compartir enlace" (menú nativo de compartir, copiar o WhatsApp). Permite invitar aunque el correo aún no esté configurado (sin dominio propio en Resend). El token solo lo ve el administrador (RLS).
+- **Rol del colaborador:** siempre **Editor**. No se elige ni se cambia; el administrador es el propietario del espacio.
+- **Enlace de invitación sin sesión:** se recuerda la ruta y, tras ingresar o registrarse (correo o Google), el usuario vuelve a ella para unirse.
+- **Recuperación de contraseña:** si el enlace venció, ya se usó o se abrió en otro navegador, la pantalla lo explica y ofrece pedir uno nuevo. Los usuarios de Google no necesitan contraseña.
+- **Plantillas** en español y con la marca: `supabase/templates/recovery.html` y `confirmation.html`.
+## R-12 — Gestión de espacios desde la cuenta
+
+**Resolución (2026-10-03).** En Perfil, la sección **"Mis espacios"** lista los espacios del usuario (rol, moneda y cuál está activo) y permite activarlos, crearlos, editarlos y eliminarlos (editar y eliminar solo como administrador; eliminar pide confirmación). El selector del Dashboard sirve solo para ver y cambiar de espacio, con acceso a "Gestionar espacios". Crear un espacio ofrece "Cancelar" cuando ya existe al menos uno (el primero es obligatorio, Cap. 6.2).
+
+## R-13 — Recordatorios para registrar movimientos
+
+**Resolución (2026-10-03).**
+
+- Cada usuario configura hasta **5 recordatorios por espacio**: qué registrar (gastos, ingresos o ambos), hora y días de la semana (accesos rápidos "Todos los días" / "Entre semana"), y los activa o desactiva.
+- Tabla `reminders` (RLS: solo su dueño, en espacios de los que es miembro). Es configuración personal, no dato financiero: se elimina de verdad (excepción al soft delete).
+- **Envío:** `pg_cron` ejecuta cada 5 minutos `dispatch_due_reminders()`, que crea la notificación in-app a la hora local del usuario (zona horaria del perfil), una vez por día. Llega aunque la app esté cerrada.
+- Acceso desde Notificaciones y desde Configuración del espacio. En iOS, el mismo recordatorio alimentará las notificaciones push del dispositivo (PushService) al compilar la app nativa.
+- La pestaña "Transfer." del filtro de Movimientos se retira; el filtro queda en Todos, Gastos e Ingresos. El menú "¿Qué deseas registrar?" ofrece solo Nuevo gasto y Nuevo ingreso (sin Transferencia, Meta ni Evento).
+
+## R-15 — Sin transferencias
+
+**Resolución (2026-10-04).** La app registra solo **gastos e ingresos**. Se eliminan las transferencias entre cuentas del formulario de movimientos, del menú "¿Qué deseas registrar?" y del filtro de Movimientos; la validación y el servicio las rechazan. Los movimientos antiguos de tipo transferencia que existan en la base se siguen mostrando (solo lectura). El monto de un movimiento se expresa en la moneda de la cuenta elegida.
+
+## R-16 — Tarjetas con halo de marca
+
+**Resolución (2026-10-04).** Las tarjetas (Card, Nova Insight y filas tipo tarjeta) usan el token `shadow-card-glow`: línea de borde fina en el verde azulado de la N + sombra mínima + halo muy leve, para dar contraste sin romper la calma visual. En modo oscuro usa `shadow-card-glow-dark`. El mismo estilo aplica a los botones de la barra superior (Configuración y Perfil). La barra lateral usa `shadow-panel` (elevación) y un borde de 1 px en el mismo verde azulado.
+
+## R-17 — Splash / loader final
+
+**Resolución (2026-10-04).** El splash muestra la N de marca con un halo que respira, un anillo de progreso que gira con degradado cyan → verde, el nombre "NovaCash", una barra indeterminada y el texto "Cargando…", sobre un resplandor radial suave. Funciona en tema claro y oscuro y respeta prefers-reduced-motion.
+
+## R-18 — Endurecimiento de seguridad para el lanzamiento
+
+**Resolución (2026-10-05).** Tras la auditoría previa al lanzamiento (detalle en `docs/security/AUDITORIA-2026-10.md`):
+
+- **Invitaciones:** solo el administrador las modifica; la aceptación es una RPC atómica (`accept_invitation`) que exige correo confirmado y coincidente, invitación vigente y espacio activo, y siempre une como editor sin degradar a miembros existentes. Límites: 1 envío por minuto, 5 por invitación y 20 invitaciones por día por espacio.
+- **Aislamiento entre espacios:** toda referencia (cuenta, categoría, meta, movimiento) debe ser del mismo espacio y ningún registro puede cambiar de espacio. Los espacios eliminados dejan de ser accesibles.
+- **Columnas protegidas:** saldos de cuentas y avance de metas solo los mueven los triggers; en notificaciones solo se marca `read`; el correo del perfil no se edita; el propietario no se transfiere ni se degrada.
+- **Auth:** confirmación de correo obligatoria; contraseña mínima de 10 caracteres con letras y números; límites de intentos de Supabase Auth.
+- **Web:** CSP estricta sin scripts en línea, HSTS, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy` y fallback de SPA (`vercel.json`, `public/_headers`, `public/_redirects`). CORS de Edge Functions limitado a la app.
+- **Cliente:** límites de monto alineados con `numeric(14,2)`, búsqueda con comodines escapados, fotos de perfil solo `https`, limpieza de caché al cambiar de usuario y sin logs en producción.
+- `supabase/schema.sql` se genera desde las migraciones (`npm run db:schema`).
+
+## R-14 — Logo de la app (N con flecha)
+
+**Resolución (2026-10-03).** El ícono del navegador (favicon), el ícono de Apple, los íconos PWA y la marca de la barra lateral usan el logo "N con flecha ascendente" (fuente: `assets/brand/source/logo-mark.png`, fondo transparente). Se generan con `npm run assets:icons`. El ícono de Apple y el maskable llevan fondo Nova Navy (no admiten transparencia). El logo completo con nombre se mantiene en el login, el splash y las páginas legales.
 
 ---
 

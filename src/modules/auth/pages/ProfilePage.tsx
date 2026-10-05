@@ -4,6 +4,9 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, ChevronRight, LogOut } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { TextField } from '@/shared/ui/text-field';
+import { ThemeSwitch } from '@/shared/ui/theme-switch';
+import { Avatar } from '@/shared/ui/avatar';
+import { MyWorkspaces } from '@/modules/workspace/components/MyWorkspaces';
 import { getErrorMessage } from '@/shared/types/app-error';
 import { ROUTES } from '@/shared/constants/routes';
 import { useAuth } from '../hooks/useAuth';
@@ -29,10 +32,9 @@ export function ProfilePage() {
   });
 
   const onSubmit = handleSubmit((data) => update.mutate(data));
-  const initial = (user?.name ?? '?').charAt(0).toUpperCase();
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col gap-8 px-6 py-8">
+    <div className="flex flex-col gap-8">
       <header className="flex items-center gap-3">
         <Button variant="ghost" size="icon" asChild aria-label="Volver">
           <Link to={ROUTES.home}>
@@ -43,9 +45,7 @@ export function ProfilePage() {
       </header>
 
       <div className="flex flex-col items-center gap-3">
-        <div className="flex size-20 items-center justify-center rounded-full bg-primary text-h2 font-bold text-primary-foreground">
-          {initial}
-        </div>
+        <Avatar name={user?.name ?? ''} src={user?.avatarUrl} className="size-20 text-h2" />
         <p className="text-caption text-muted-foreground">{user?.email}</p>
       </div>
 
@@ -64,6 +64,14 @@ export function ProfilePage() {
         </Button>
       </form>
 
+      <div className="flex items-center gap-3 rounded-md border border-input bg-card px-4 py-3 text-body text-foreground shadow-card-glow dark:shadow-card-glow-dark">
+        <span className="text-xl">🌓</span>
+        <span className="flex-1">Apariencia</span>
+        <ThemeSwitch />
+      </div>
+
+      <MyWorkspaces />
+
       <nav className="flex flex-col gap-2">
         <ProfileLink to={ROUTES.accounts} emoji="🏦" label="Cuentas" />
         <ProfileLink to={ROUTES.categories} emoji="🏷️" label="Categorías" />
@@ -78,7 +86,7 @@ export function ProfilePage() {
         <LogOut />
         Cerrar sesión
       </Button>
-    </main>
+    </div>
   );
 }
 
@@ -86,7 +94,7 @@ function ProfileLink({ to, emoji, label }: { to: string; emoji: string; label: s
   return (
     <Link
       to={to}
-      className="flex items-center gap-3 rounded-md border border-input bg-card px-4 py-3 text-body text-foreground active:scale-[0.99]"
+      className="flex items-center gap-3 rounded-md border border-input bg-card px-4 py-3 text-body text-foreground shadow-card-glow active:scale-[0.99] dark:shadow-card-glow-dark"
     >
       <span className="text-xl">{emoji}</span>
       <span className="flex-1">{label}</span>

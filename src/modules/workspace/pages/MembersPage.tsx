@@ -1,17 +1,19 @@
 import { Link } from 'react-router-dom';
-import { ArrowLeft, X } from 'lucide-react';
+import { ArrowLeft, Send, X } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { Card } from '@/shared/ui/card';
-import { Select } from '@/shared/ui/select';
 import { ROUTES } from '@/shared/constants/routes';
 import { useActiveWorkspace } from '../hooks/useWorkspaces';
-import { useMembers, useChangeMemberRole, useRemoveMember } from '../hooks/useMembers';
-import { useInvitations, useCancelInvitation } from '../hooks/useInvitations';
+import { useMembers, useRemoveMember } from '../hooks/useMembers';
+import { getErrorMessage } from '@/shared/types/app-error';
+import { FormError } from '@/modules/auth/components/FormError';
+import { FormSuccess } from '@/modules/auth/components/FormSuccess';
+import { useInvitations, useCancelInvitation, useResendInvitation } from '../hooks/useInvitations';
 import { InviteForm } from '../components/InviteForm';
+import { ShareInvitationButton } from '../components/ShareInvitationButton';
 import { ROLE_LABELS } from '../constants/workspace.constants';
-import type { MemberRole } from '../types/workspace.types';
 
-/** Colaboradores (Cap. 6.16). El admin gestiona; el resto ve la lista. */
+/** Colaboradores (Cap. 6.16 / R-11). El admin invita y gestiona; todo colaborador es editor. */
 export function MembersPage() {
   const { active } = useActiveWorkspace();
   const workspaceId = active?.id ?? '';
@@ -19,14 +21,14 @@ export function MembersPage() {
 
   const { data: members = [], isLoading } = useMembers(workspaceId);
   const { data: invitations = [] } = useInvitations(workspaceId);
-  const changeRole = useChangeMemberRole(workspaceId);
   const removeMember = useRemoveMember(workspaceId);
   const cancelInvite = useCancelInvitation(workspaceId);
+  const resendInvite = useResendInvitation();
 
   if (!active) return null;
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col gap-6 px-6 py-8">
+    <div className="flex flex-col gap-6">
       <header className="flex items-center gap-3">
         <Button variant="ghost" size="icon" asChild aria-label="Volver">
           <Link to={ROUTES.home}>
@@ -54,19 +56,10 @@ export function MembersPage() {
                   <p className="truncate text-caption text-muted-foreground">{m.email}</p>
                 </div>
                 {isAdmin && !isOwner ? (
-                  <div className="flex items-center gap-1">
-                    <Select
-                      aria-label="Rol"
-                      className="h-10 w-28 text-caption"
-                      value={m.role}
-                      onChange={(e) =>
-                        changeRole.mutate({ memberId: m.id, role: e.target.value as MemberRole })
-                      }
-                    >
-                      <option value="admin">Administrador</option>
-                      <option value="editor">Editor</option>
-                      <option value="viewer">Lector</option>
-                    </Select>
+                  <div className="flex items-center gap-2">
+                    <span className="text-caption text-muted-foreground">
+                      {ROLE_LABELS[m.role]}
+                    </span>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -92,6 +85,10 @@ export function MembersPage() {
           <h2 className="text-caption font-semibold uppercase tracking-wide text-muted-foreground">
             Invitaciones pendientes
           </h2>
+          {resendInvite.isError ? (
+            <FormError message={getErrorMessage(resendInvite.error)} />
+          ) : null}
+          {resendInvite.isSuccess ? <FormSuccess message="Invitación reenviada." /> : null}
           {invitations.map((inv) => (
             <Card key={inv.id} className="flex items-center gap-3 p-4">
               <div className="min-w-0 flex-1">
@@ -99,14 +96,28 @@ export function MembersPage() {
                 <p className="text-caption text-muted-foreground">{ROLE_LABELS[inv.role]}</p>
               </div>
               {isAdmin ? (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label="Cancelar invitación"
-                  onClick={() => cancelInvite.mutate(inv.id)}
-                >
-                  <X />
-                </Button>
+                <div className="flex items-center gap-1">
+                  <ShareInvitationButton token={inv.token} workspaceName={active.name} />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Reenviar invitación"
+                    title="Reenviar invitación"
+                    disabled={resendInvite.isPending}
+                    onClick={() => resendInvite.mutate(inv.id)}
+                  >
+                    <Send />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Cancelar invitación"
+                    title="Cancelar invitación"
+                    onClick={() => cancelInvite.mutate(inv.id)}
+                  >
+                    <X />
+                  </Button>
+                </div>
               ) : null}
             </Card>
           ))}
@@ -121,6 +132,6 @@ export function MembersPage() {
           <InviteForm workspaceId={workspaceId} />
         </section>
       ) : null}
-    </main>
+    </div>
   );
 }

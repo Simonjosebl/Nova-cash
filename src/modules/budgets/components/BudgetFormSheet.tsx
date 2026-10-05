@@ -4,8 +4,9 @@ import { BottomSheet } from '@/shared/ui/bottom-sheet';
 import { Button } from '@/shared/ui/button';
 import { Label } from '@/shared/ui/label';
 import { Select } from '@/shared/ui/select';
-import { TextField } from '@/shared/ui/text-field';
 import { AmountInput } from '@/shared/ui/amount-input';
+import { PercentInput } from '@/shared/ui/percent-input';
+import { CurrencyPicker } from '@/shared/ui/currency-picker';
 import { getErrorMessage } from '@/shared/types/app-error';
 import { FormError } from '@/modules/auth/components/FormError';
 import { useCategories } from '@/modules/categories/hooks/useCategories';
@@ -22,7 +23,10 @@ interface Props {
   takenCategoryIds: string[];
 }
 
-/** Formulario de presupuesto (Cap. 6.12): categoría + monto + umbral de aviso. */
+/**
+ * Formulario de presupuesto (Cap. 6.12): categoría + moneda + monto + umbral de aviso.
+ * La moneda por defecto es la del espacio (R-08).
+ */
 export function BudgetFormSheet({
   open,
   onClose,
@@ -44,6 +48,7 @@ export function BudgetFormSheet({
     register,
     handleSubmit,
     control,
+    watch,
     formState: { errors },
   } = useForm<CreateBudgetInput>({
     resolver: zodResolver(createBudgetSchema),
@@ -51,9 +56,10 @@ export function BudgetFormSheet({
       ? {
           categoryId: budget.categoryId,
           amount: budget.amount,
+          currency: budget.currency,
           warningPercentage: budget.warningPercentage,
         }
-      : { categoryId: '', amount: 0, warningPercentage: 80 },
+      : { categoryId: '', amount: 0, currency, warningPercentage: 80 },
   });
 
   const onSubmit = handleSubmit((data) => {
@@ -61,7 +67,11 @@ export function BudgetFormSheet({
       update.mutate(
         {
           id: budget.id,
-          input: { amount: data.amount, warningPercentage: data.warningPercentage },
+          input: {
+            amount: data.amount,
+            currency: data.currency,
+            warningPercentage: data.warningPercentage,
+          },
         },
         { onSuccess: onClose },
       );
@@ -111,11 +121,26 @@ export function BudgetFormSheet({
 
         <Controller
           control={control}
+          name="currency"
+          render={({ field }) => (
+            <CurrencyPicker
+              id="budget-currency"
+              label="Moneda"
+              value={field.value}
+              onChange={field.onChange}
+              error={errors.currency?.message}
+              hint="Solo suma los gastos de tus cuentas en esta moneda."
+            />
+          )}
+        />
+
+        <Controller
+          control={control}
           name="amount"
           render={({ field }) => (
             <AmountInput
               label="Monto del presupuesto"
-              currency={currency}
+              currency={watch('currency')}
               value={field.value}
               onChange={field.onChange}
               error={errors.amount?.message}
@@ -123,11 +148,19 @@ export function BudgetFormSheet({
           )}
         />
 
-        <TextField
-          label="Avisar al alcanzar (%)"
-          type="number"
-          error={errors.warningPercentage?.message}
-          {...register('warningPercentage', { valueAsNumber: true })}
+        <Controller
+          control={control}
+          name="warningPercentage"
+          render={({ field }) => (
+            <PercentInput
+              id="budget-warning"
+              label="Avisar al alcanzar"
+              value={field.value}
+              onChange={field.onChange}
+              error={errors.warningPercentage?.message}
+              hint="Te avisaremos cuando gastes este porcentaje del presupuesto."
+            />
+          )}
         />
 
         <Button type="submit" disabled={isPending}>

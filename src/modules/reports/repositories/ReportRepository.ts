@@ -21,15 +21,24 @@ interface RawRow {
 }
 
 export interface IReportRepository {
-  fetchRange(workspaceId: string, from: string, to: string): Promise<ReportRow[]>;
+  /** Movimientos del rango en cuentas de la moneda indicada (R-08: sin conversión). */
+  fetchRange(workspaceId: string, currency: string, from: string, to: string): Promise<ReportRow[]>;
 }
 
 export class ReportRepository implements IReportRepository {
-  async fetchRange(workspaceId: string, from: string, to: string): Promise<ReportRow[]> {
+  async fetchRange(
+    workspaceId: string,
+    currency: string,
+    from: string,
+    to: string,
+  ): Promise<ReportRow[]> {
     const { data, error } = await supabase
       .from('transactions')
-      .select('type,amount,transaction_date, category:categories(name,emoji)')
+      .select(
+        'type,amount,transaction_date, category:categories(name,emoji), account:accounts!transactions_account_id_fkey!inner(currency)',
+      )
       .eq('workspace_id', workspaceId)
+      .eq('account.currency', currency)
       .eq('status', 'confirmed')
       .gte('transaction_date', from)
       .lte('transaction_date', to);

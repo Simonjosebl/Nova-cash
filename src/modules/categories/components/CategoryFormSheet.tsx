@@ -16,6 +16,7 @@ import {
 } from '../hooks/useCategoryMutations';
 import { CATEGORY_EMOJIS } from '../constants/category.constants';
 import type { Category, CategoryType } from '../types/category.types';
+import { useConfirm } from '@/shared/hooks/useConfirm';
 
 interface CategoryFormSheetProps {
   open: boolean;
@@ -36,6 +37,7 @@ export function CategoryFormSheet({
   const isEdit = !!category;
   const create = useCreateCategory(workspaceId);
   const update = useUpdateCategory(workspaceId);
+  const confirm = useConfirm();
   const remove = useDeleteCategory(workspaceId);
 
   const {
@@ -112,10 +114,13 @@ export function CategoryFormSheet({
         <Button
           variant="danger"
           className="mt-3 w-full"
-          onClick={() => {
-            if (window.confirm('¿Eliminar esta categoría?')) {
-              remove.mutate(category.id, { onSuccess: onClose });
-            }
+          onClick={async () => {
+            const ok = await confirm({
+              title: '¿Eliminar esta categoría?',
+              description: 'Los movimientos existentes conservarán su historial.',
+              emoji: '🏷️',
+            });
+            if (ok) remove.mutate(category.id, { onSuccess: onClose });
           }}
         >
           Eliminar

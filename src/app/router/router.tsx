@@ -15,7 +15,6 @@ const load = <T extends Record<string, ComponentType>>(factory: () => Promise<T>
 
 const LoginPage = load(() => import('@/modules/auth/pages/LoginPage'), 'LoginPage');
 const RegisterPage = load(() => import('@/modules/auth/pages/RegisterPage'), 'RegisterPage');
-const MagicLinkPage = load(() => import('@/modules/auth/pages/MagicLinkPage'), 'MagicLinkPage');
 const ForgotPasswordPage = load(
   () => import('@/modules/auth/pages/ForgotPasswordPage'),
   'ForgotPasswordPage',
@@ -24,6 +23,11 @@ const ResetPasswordPage = load(
   () => import('@/modules/auth/pages/ResetPasswordPage'),
   'ResetPasswordPage',
 );
+const PrivacyPolicyPage = load(
+  () => import('@/modules/legal/pages/PrivacyPolicyPage'),
+  'PrivacyPolicyPage',
+);
+const TermsPage = load(() => import('@/modules/legal/pages/TermsPage'), 'TermsPage');
 const ProfilePage = load(() => import('@/modules/auth/pages/ProfilePage'), 'ProfilePage');
 const CreateWorkspacePage = load(
   () => import('@/modules/workspace/pages/CreateWorkspacePage'),
@@ -56,6 +60,10 @@ const NotificationsPage = load(
   () => import('@/modules/notifications/pages/NotificationsPage'),
   'NotificationsPage',
 );
+const RemindersPage = load(
+  () => import('@/modules/notifications/pages/RemindersPage'),
+  'RemindersPage',
+);
 const DashboardPage = load(
   () => import('@/modules/dashboard/pages/DashboardPage'),
   'DashboardPage',
@@ -67,15 +75,16 @@ export const router = createBrowserRouter([
     children: [
       { path: ROUTES.login, element: <LoginPage /> },
       { path: ROUTES.register, element: <RegisterPage /> },
-      { path: ROUTES.magicLink, element: <MagicLinkPage /> },
       { path: ROUTES.forgotPassword, element: <ForgotPasswordPage /> },
     ],
   },
   { path: ROUTES.resetPassword, element: <ResetPasswordPage /> },
+  { path: ROUTES.privacy, element: <PrivacyPolicyPage /> },
+  { path: ROUTES.terms, element: <TermsPage /> },
   {
     element: <RequireAuth />,
     children: [
-      { path: ROUTES.profile, element: <ProfilePage /> },
+      { element: <AppLayout />, children: [{ path: ROUTES.profile, element: <ProfilePage /> }] },
       { path: ROUTES.createWorkspace, element: <CreateWorkspacePage /> },
       { path: `${ROUTES.invite}/:token`, element: <AcceptInvitationPage /> },
       {
@@ -88,16 +97,17 @@ export const router = createBrowserRouter([
               { path: ROUTES.transactions, element: <TransactionsPage /> },
               { path: ROUTES.calendar, element: <CalendarPage /> },
               { path: ROUTES.reports, element: <ReportsPage /> },
+              { path: ROUTES.accounts, element: <AccountsPage /> },
+              { path: ROUTES.categories, element: <CategoriesPage /> },
+              { path: ROUTES.budgets, element: <BudgetsPage /> },
+              { path: ROUTES.goals, element: <GoalsPage /> },
+              { path: ROUTES.notifications, element: <NotificationsPage /> },
+              { path: ROUTES.reminders, element: <RemindersPage /> },
+              { path: ROUTES.workspaceSettings, element: <WorkspaceSettingsPage /> },
+              { path: ROUTES.members, element: <MembersPage /> },
+              { path: ROUTES.history, element: <HistoryPage /> },
             ],
           },
-          { path: ROUTES.accounts, element: <AccountsPage /> },
-          { path: ROUTES.categories, element: <CategoriesPage /> },
-          { path: ROUTES.budgets, element: <BudgetsPage /> },
-          { path: ROUTES.goals, element: <GoalsPage /> },
-          { path: ROUTES.notifications, element: <NotificationsPage /> },
-          { path: ROUTES.workspaceSettings, element: <WorkspaceSettingsPage /> },
-          { path: ROUTES.members, element: <MembersPage /> },
-          { path: ROUTES.history, element: <HistoryPage /> },
         ],
       },
     ],

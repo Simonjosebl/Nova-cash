@@ -2,7 +2,7 @@ import type { Session, User, Subscription } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { AppError } from '@/shared/types/app-error';
 import { mapAuthError } from '../constants/auth.errors';
-import type { AuthUser, SignInDTO, SignUpDTO } from '../types/auth.types';
+import type { AuthUser, SignInDTO, SignUpRecordDTO } from '../types/auth.types';
 
 /**
  * AuthRepository — única capa que habla con Supabase Auth (ADR-010).
@@ -11,8 +11,8 @@ import type { AuthUser, SignInDTO, SignUpDTO } from '../types/auth.types';
  */
 export interface IAuthRepository {
   signIn(dto: SignInDTO): Promise<Session>;
-  signUp(dto: SignUpDTO): Promise<Session | null>;
-  sendMagicLink(email: string, redirectTo: string): Promise<void>;
+  signUp(dto: SignUpRecordDTO): Promise<Session | null>;
+  signInWithGoogle(redirectTo: string): Promise<void>;
   sendPasswordReset(email: string, redirectTo: string): Promise<void>;
   updatePassword(password: string): Promise<void>;
   updateName(name: string): Promise<AuthUser>;
@@ -23,11 +23,15 @@ export interface IAuthRepository {
 
 export function mapSupabaseUser(user: User): AuthUser {
   const metadata = user.user_metadata ?? {};
-  const name =
-    typeof metadata.name === 'string' && metadata.name.trim().length > 0
-      ? metadata.name
-      : (user.email?.split('@')[0] ?? 'Usuario');
-  const avatarUrl = typeof metadata.avatar_url === 'string' ? metadata.avatar_url : null;
+  const rawName = [metadata.name, metadata.full_name].find(
+    (value): value is string => typeof value === 'string' && value.trim().length > 0,
+  );
+  const name = rawName ?? user.email?.split('@')[0] ?? 'Usuario';
+  // Solo fotos https (p. ej. Google); se ignoran data:, http: u otros esquemas (R-18).
+  const avatarUrl =
+    typeof metadata.avatar_url === 'string' && metadata.avatar_url.startsWith('https://')
+      ? metadata.avatar_url
+      : null;
   return { id: user.id, email: user.email ?? '', name, avatarUrl };
 }
 
@@ -43,20 +47,33 @@ export class AuthRepository implements IAuthRepository {
     return data.session;
   }
 
-  async signUp({ name, email, password }: SignUpDTO): Promise<Session | null> {
+  async signUp({
+    name,
+    email,
+    password,
+    policiesVersion,
+    policiesAcceptedAt,
+  }: SignUpRecordDTO): Promise<Session | null> {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { name } },
+      options: {
+        data: {
+          name,
+          policies_version: policiesVersion,
+          policies_accepted_at: policiesAcceptedAt,
+        },
+      },
     });
     if (error) fail(error);
     return data.session;
   }
 
-  async sendMagicLink(email: string, redirectTo: string): Promise<void> {
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: redirectTo },
+  /** Redirige a Google (OAuth). La sesión se detecta en la URL al volver. */
+  async signInWithGoogle(redirectTo: string): Promise<void> {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo, queryParams: { prompt: 'select_account' } },
     });
     if (error) fail(error);
   }

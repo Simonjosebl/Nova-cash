@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { MAX_AMOUNT } from '@/shared/constants/limits';
 
 /** Evento del calendario (Cap. 4.13 / 6.11): un pago/ingreso programado. */
 export const eventSchema = z
@@ -8,7 +9,8 @@ export const eventSchema = z
     flow: z.enum(['income', 'expense']),
     amount: z
       .number({ invalid_type_error: 'Ingresa un monto.' })
-      .positive('El monto debe ser mayor a cero.'),
+      .positive('El monto debe ser mayor a cero.')
+      .max(MAX_AMOUNT, 'El monto es demasiado alto.'),
     accountId: z.string().optional(),
     categoryId: z.string().optional(),
     date: z.string().min(1, 'Elige una fecha.'),

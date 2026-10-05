@@ -25,7 +25,7 @@ supabase start          # levanta Postgres + Studio + Inbucket local
 supabase db reset       # aplica migraciones (supabase/migrations) + seed demo
 ```
 
-- Studio: http://localhost:54323 · Correos (magic link): http://localhost:54324
+- Studio: http://localhost:54323 · Correos (Inbucket): http://localhost:54324
 - Usuario demo: `demo@novacash.co` / `demo1234`
 
 ## 3. Variables de entorno
@@ -47,6 +47,14 @@ supabase functions deploy accept-invitation
 ```
 
 - **Auth (Project Settings → Auth):** activar confirmación de correo en prod; configurar SMTP; añadir Redirect URLs (`https://tu-dominio/reset-password`, deep link de la app).
+- **Google (Authentication → Providers → Google):** activar el proveedor y pegar el _Client ID_ y _Client Secret_ de un cliente OAuth "Aplicación web" de Google Cloud Console. En Google, añadir como _Authorized redirect URI_ `https://<REF>.supabase.co/auth/v1/callback`. En Supabase → Auth → URL Configuration, incluir `http://localhost:5173` y el dominio de producción en Redirect URLs (Resolución R-03).
+- **Correos (Resend — R-11):**
+  1. Crea una cuenta en [resend.com](https://resend.com), agrega y **verifica tu dominio** (registros DNS que te indica) y crea una API key.
+  2. **Supabase → Authentication → SMTP Settings → Enable custom SMTP:** host `smtp.resend.com`, port `465`, user `resend`, password = API key, sender = `no-reply@tu-dominio.com`, nombre `Nova Cash`.
+  3. **Authentication → Email Templates:** pega `supabase/templates/recovery.html` en _Reset Password_ (asunto "Restablece tu contraseña de Nova Cash") y `confirmation.html` en _Confirm signup_ (asunto "Confirma tu cuenta de Nova Cash").
+  4. **Authentication → URL Configuration:** Site URL = dominio de la app; Redirect URLs incluye `/reset-password` (local y producción).
+  5. **Invitaciones:** `supabase secrets set RESEND_API_KEY=... EMAIL_FROM="Nova Cash <no-reply@tu-dominio.com>" APP_URL=https://tu-dominio.com` y `supabase functions deploy send-invitation accept-invitation`.
+  - **Sin dominio propio (Gmail):** en el paso 2 usa host `smtp.gmail.com`, puerto `465`, usuario = tu Gmail y una _contraseña de aplicación_ (myaccount.google.com/apppasswords). Para las invitaciones: `supabase secrets set SMTP_HOST=smtp.gmail.com SMTP_USER=tu@gmail.com SMTP_PASSWORD=clave16letras APP_URL=http://localhost:5173` y despliega `send-invitation`.
 - **Storage:** crear buckets privados `avatars`, `attachments`, `receipts` (Cap. 5.14) cuando se activen adjuntos.
 - Tipos generados: `npm run types:gen` (reemplaza el genérico del cliente Supabase).
 

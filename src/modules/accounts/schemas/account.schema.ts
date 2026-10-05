@@ -14,9 +14,7 @@ export const createAccountSchema = z.object({
   name: z.string().min(2, 'Ingresa un nombre.').max(60, 'Nombre demasiado largo.'),
   emoji: z.string().min(1, 'Elige un emoji.'),
   type: accountType,
-  openingBalance: z
-    .number({ invalid_type_error: 'Ingresa un monto.' })
-    .min(0, 'El saldo no puede ser negativo.'),
+  currency: z.string().regex(/^[A-Z]{3}$/, 'Elige una moneda.'),
 });
 
 export const updateAccountSchema = z.object({

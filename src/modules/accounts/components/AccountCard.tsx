@@ -1,4 +1,3 @@
-import { ChevronDown, ChevronUp } from 'lucide-react';
 import { Card } from '@/shared/ui/card';
 import { formatMoney } from '@/shared/utils/money';
 import { ACCOUNT_TYPE_LABELS } from '../constants/account.constants';
@@ -8,20 +7,10 @@ interface AccountCardProps {
   account: Account;
   canEdit: boolean;
   onEdit: (account: Account) => void;
-  onMove?: (direction: 'up' | 'down') => void;
-  isFirst?: boolean;
-  isLast?: boolean;
 }
 
-/** Tarjeta de cuenta (Cap. 6.8): emoji, nombre, tipo, saldo. Reordenar con flechas. */
-export function AccountCard({
-  account,
-  canEdit,
-  onEdit,
-  onMove,
-  isFirst,
-  isLast,
-}: AccountCardProps) {
+/** Tarjeta de cuenta (Cap. 6.8): emoji, nombre, tipo y saldo en su moneda. */
+export function AccountCard({ account, canEdit, onEdit }: AccountCardProps) {
   return (
     <Card className="flex items-center gap-3 p-4">
       <button
@@ -43,29 +32,6 @@ export function AccountCard({
           {formatMoney(account.currentBalance, account.currency)}
         </span>
       </button>
-
-      {canEdit && onMove ? (
-        <div className="flex flex-col">
-          <button
-            type="button"
-            aria-label="Subir"
-            disabled={isFirst}
-            onClick={() => onMove('up')}
-            className="text-muted-foreground disabled:opacity-30"
-          >
-            <ChevronUp className="size-4" />
-          </button>
-          <button
-            type="button"
-            aria-label="Bajar"
-            disabled={isLast}
-            onClick={() => onMove('down')}
-            className="text-muted-foreground disabled:opacity-30"
-          >
-            <ChevronDown className="size-4" />
-          </button>
-        </div>
-      ) : null}
     </Card>
   );
 }

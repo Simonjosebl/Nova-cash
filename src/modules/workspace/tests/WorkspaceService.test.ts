@@ -25,7 +25,7 @@ function createRepoMock(): IWorkspaceRepository {
     update: vi.fn(),
     softDelete: vi.fn(),
     listMembers: vi.fn().mockResolvedValue([]),
-    updateMemberRole: vi.fn(),
+    sendInvitationEmail: vi.fn().mockResolvedValue(undefined),
     removeMember: vi.fn(),
     listInvitations: vi.fn().mockResolvedValue([]),
     createInvitation: vi.fn(),
@@ -44,15 +44,20 @@ describe('WorkspaceService', () => {
     service = new WorkspaceService(repo);
   });
 
-  it('create obtiene el perfil y delega en el repositorio', async () => {
+  it('create delega en el repositorio (owner lo asigna el servidor vía RPC)', async () => {
     await service.create({ name: 'Hogar', emoji: '🏠', type: 'family', currency: 'COP' });
-    expect(repo.getMyProfileId).toHaveBeenCalled();
-    expect(repo.create).toHaveBeenCalledWith(expect.objectContaining({ name: 'Hogar' }), 'p1');
+    expect(repo.create).toHaveBeenCalledWith(expect.objectContaining({ name: 'Hogar' }));
+  });
+
+  it('invite crea como editor y envía el correo de la invitación', async () => {
+    vi.mocked(repo.createInvitation).mockResolvedValue({ id: 'inv1' } as WorkspaceInvitation);
+    await service.invite('ws1', { email: 'ana@x.com' });
+    expect(repo.sendInvitationEmail).toHaveBeenCalledWith('inv1');
   });
 
   it('invite normaliza el correo y registra invitedBy', async () => {
     vi.mocked(repo.createInvitation).mockResolvedValue({} as WorkspaceInvitation);
-    await service.invite('ws1', { email: '  Nuevo@Correo.COM ', role: 'editor' });
+    await service.invite('ws1', { email: '  Nuevo@Correo.COM ' });
     expect(repo.createInvitation).toHaveBeenCalledWith(
       'ws1',
       { email: 'nuevo@correo.com', role: 'editor' },
@@ -68,14 +73,14 @@ describe('WorkspaceService', () => {
       member('d@x.com'),
       member('e@x.com'),
     ]);
-    await expect(service.invite('ws1', { email: 'f@x.com', role: 'editor' })).rejects.toSatisfy(
+    await expect(service.invite('ws1', { email: 'f@x.com' })).rejects.toSatisfy(
       (e) => isAppError(e) && e.code === 'MEMBER_LIMIT',
     );
   });
 
   it('invite rechaza a un colaborador existente', async () => {
     vi.mocked(repo.listMembers).mockResolvedValue([member('ya@x.com')]);
-    await expect(service.invite('ws1', { email: 'ya@x.com', role: 'editor' })).rejects.toSatisfy(
+    await expect(service.invite('ws1', { email: 'ya@x.com' })).rejects.toSatisfy(
       (e) => isAppError(e) && e.code === 'ALREADY_MEMBER',
     );
   });
@@ -89,10 +94,11 @@ describe('WorkspaceService', () => {
         role: 'editor',
         status: 'pending',
         expiresAt: '',
+        token: 't1',
         createdAt: '',
       },
     ]);
-    await expect(service.invite('ws1', { email: 'pend@x.com', role: 'editor' })).rejects.toSatisfy(
+    await expect(service.invite('ws1', { email: 'pend@x.com' })).rejects.toSatisfy(
       (e) => isAppError(e) && e.code === 'ALREADY_INVITED',
     );
   });

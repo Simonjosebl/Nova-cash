@@ -48,6 +48,7 @@ interface InvitationRow {
   status: WorkspaceInvitation['status'];
   expires_at: string;
   created_at: string;
+  token: string;
 }
 interface SettingsRow {
   workspace_id: string;
@@ -89,11 +90,10 @@ function mapMember(row: MemberRow): WorkspaceMember {
 export interface IWorkspaceRepository {
   getMyProfileId(): Promise<string>;
   listMine(): Promise<WorkspaceWithRole[]>;
-  create(dto: CreateWorkspaceDTO, ownerProfileId: string): Promise<Workspace>;
+  create(dto: CreateWorkspaceDTO): Promise<Workspace>;
   update(id: string, dto: UpdateWorkspaceDTO): Promise<Workspace>;
   softDelete(id: string): Promise<void>;
   listMembers(workspaceId: string): Promise<WorkspaceMember[]>;
-  updateMemberRole(memberId: string, role: MemberRole): Promise<void>;
   removeMember(memberId: string): Promise<void>;
   listInvitations(workspaceId: string): Promise<WorkspaceInvitation[]>;
   createInvitation(
@@ -102,6 +102,8 @@ export interface IWorkspaceRepository {
     invitedBy: string,
   ): Promise<WorkspaceInvitation>;
   cancelInvitation(id: string): Promise<void>;
+  /** Envía (o reenvía) el correo de la invitación vía Edge Function `send-invitation`. */
+  sendInvitationEmail(invitationId: string): Promise<void>;
   acceptInvitation(token: string): Promise<string>;
   getSettings(workspaceId: string): Promise<WorkspaceSettings | null>;
 }
@@ -135,19 +137,15 @@ export class WorkspaceRepository implements IWorkspaceRepository {
       .map((r) => ({ ...mapWorkspace(r.workspace), role: r.role }));
   }
 
-  async create(dto: CreateWorkspaceDTO, ownerProfileId: string): Promise<Workspace> {
-    const { data, error } = await supabase
-      .from('workspaces')
-      .insert({
-        name: dto.name,
-        emoji: dto.emoji,
-        type: dto.type,
-        currency: dto.currency,
-        owner_id: ownerProfileId,
-        created_by: ownerProfileId,
-      })
-      .select(WS_COLS)
-      .single();
+  // El alta se hace vía RPC SECURITY DEFINER (deriva el owner en el servidor y
+  // evita el WITH CHECK de RLS sobre workspaces). Más seguro (Cap. 9.13).
+  async create(dto: CreateWorkspaceDTO): Promise<Workspace> {
+    const { data, error } = await supabase.rpc('create_workspace', {
+      p_name: dto.name,
+      p_emoji: dto.emoji,
+      p_type: dto.type,
+      p_currency: dto.currency,
+    });
     if (error || !data) throw toAppError(error, 'No pudimos crear el espacio.');
     return mapWorkspace(data as WorkspaceRow);
   }
@@ -164,10 +162,7 @@ export class WorkspaceRepository implements IWorkspaceRepository {
   }
 
   async softDelete(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('workspaces')
-      .update({ deleted_at: new Date().toISOString() })
-      .eq('id', id);
+    const { error } = await supabase.rpc('soft_delete_workspace', { p_id: id });
     if (error) throw toAppError(error, 'No pudimos eliminar el espacio.');
   }
 
@@ -181,11 +176,6 @@ export class WorkspaceRepository implements IWorkspaceRepository {
     return ((data ?? []) as MemberRow[]).map(mapMember);
   }
 
-  async updateMemberRole(memberId: string, role: MemberRole): Promise<void> {
-    const { error } = await supabase.from('workspace_members').update({ role }).eq('id', memberId);
-    if (error) throw toAppError(error, 'No pudimos cambiar el rol.');
-  }
-
   async removeMember(memberId: string): Promise<void> {
     const { error } = await supabase
       .from('workspace_members')
@@ -197,7 +187,7 @@ export class WorkspaceRepository implements IWorkspaceRepository {
   async listInvitations(workspaceId: string): Promise<WorkspaceInvitation[]> {
     const { data, error } = await supabase
       .from('workspace_invitations')
-      .select('id,workspace_id,email,role,status,expires_at,created_at')
+      .select('id,workspace_id,email,role,status,expires_at,created_at,token')
       .eq('workspace_id', workspaceId)
       .eq('status', 'pending');
     if (error) throw toAppError(error, 'No pudimos cargar las invitaciones.');
@@ -209,6 +199,7 @@ export class WorkspaceRepository implements IWorkspaceRepository {
       status: row.status,
       expiresAt: row.expires_at,
       createdAt: row.created_at,
+      token: row.token,
     }));
   }
 
@@ -225,7 +216,7 @@ export class WorkspaceRepository implements IWorkspaceRepository {
         role: dto.role,
         invited_by: invitedBy,
       })
-      .select('id,workspace_id,email,role,status,expires_at,created_at')
+      .select('id,workspace_id,email,role,status,expires_at,created_at,token')
       .single();
     if (error || !data) throw toAppError(error, 'No pudimos enviar la invitación.');
     const row = data as InvitationRow;
@@ -237,7 +228,21 @@ export class WorkspaceRepository implements IWorkspaceRepository {
       status: row.status,
       expiresAt: row.expires_at,
       createdAt: row.created_at,
+      token: row.token,
     };
+  }
+
+  async sendInvitationEmail(invitationId: string): Promise<void> {
+    const { error } = await supabase.functions.invoke('send-invitation', {
+      body: { invitationId },
+    });
+    if (error) {
+      throw new AppError(
+        'INVITE_EMAIL_FAILED',
+        'Guardamos la invitación, pero no pudimos enviar el correo. Compártela con el botón de enlace en “Invitaciones pendientes”.',
+        { details: error },
+      );
+    }
   }
 
   async cancelInvitation(id: string): Promise<void> {
@@ -248,15 +253,18 @@ export class WorkspaceRepository implements IWorkspaceRepository {
     if (error) throw toAppError(error, 'No pudimos cancelar la invitación.');
   }
 
+  /** Aceptación atómica en la base de datos (RPC accept_invitation — R-18). */
   async acceptInvitation(token: string): Promise<string> {
-    const { data, error } = await supabase.functions.invoke('accept-invitation', {
-      body: { token },
-    });
-    const result = data as { workspaceId?: string } | null;
-    if (error || !result?.workspaceId) {
-      throw new AppError('INVITATION_INVALID', 'La invitación no es válida o ya expiró.');
+    const { data, error } = await supabase.rpc('accept_invitation', { p_token: token });
+    if (error || typeof data !== 'string') {
+      throw new AppError(
+        error?.hint || 'INVITATION_INVALID',
+        // Solo los errores controlados de la RPC (con hint) traen un mensaje para el usuario.
+        error?.hint && error.message ? error.message : 'La invitación no es válida o ya expiró.',
+        { details: error },
+      );
     }
-    return result.workspaceId;
+    return data;
   }
 
   async getSettings(workspaceId: string): Promise<WorkspaceSettings | null> {

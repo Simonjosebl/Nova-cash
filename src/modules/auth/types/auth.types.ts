@@ -22,6 +22,12 @@ export interface SignUpDTO {
   password: string;
 }
 
+/** Registro con evidencia de la autorización de tratamiento de datos (R-05). */
+export interface SignUpRecordDTO extends SignUpDTO {
+  policiesVersion: string;
+  policiesAcceptedAt: string;
+}
+
 export interface AuthSession {
   session: Session;
   user: AuthUser;

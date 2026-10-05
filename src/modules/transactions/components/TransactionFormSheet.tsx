@@ -18,6 +18,7 @@ import {
   useUpdateTransaction,
 } from '../hooks/useTransactionMutations';
 import type { Transaction, TransactionType } from '../types/transaction.types';
+import { useConfirm } from '@/shared/hooks/useConfirm';
 
 interface Props {
   open: boolean;
@@ -30,7 +31,7 @@ interface Props {
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-/** Registrar movimiento (Cap. 6.10). Gasto/ingreso/transferencia en < 20s. */
+/** Registrar movimiento (Cap. 6.10 / R-15). Gasto o ingreso en < 20s. */
 export function TransactionFormSheet({
   open,
   onClose,
@@ -44,6 +45,7 @@ export function TransactionFormSheet({
   const { data: categories = [] } = useCategories(workspaceId);
   const create = useCreateTransaction(workspaceId);
   const update = useUpdateTransaction(workspaceId);
+  const confirm = useConfirm();
   const remove = useDeleteTransaction(workspaceId);
 
   const {
@@ -56,20 +58,18 @@ export function TransactionFormSheet({
     resolver: zodResolver(transactionSchema),
     defaultValues: transaction
       ? {
-          type: transaction.type === 'adjustment' ? 'expense' : transaction.type,
+          type: transaction.type === 'income' ? 'income' : 'expense',
           amount: transaction.amount,
           accountId: transaction.accountId,
-          toAccountId: transaction.toAccountId ?? '',
           categoryId: transaction.categoryId ?? '',
           description: transaction.description ?? '',
           date: transaction.date,
           notes: transaction.notes ?? '',
         }
       : {
-          type: initialType === 'adjustment' ? 'expense' : initialType,
+          type: initialType === 'income' ? 'income' : 'expense',
           amount: 0,
           accountId: accounts[0]?.id ?? '',
-          toAccountId: '',
           categoryId: '',
           description: '',
           date: today(),
@@ -78,6 +78,8 @@ export function TransactionFormSheet({
   });
 
   const type = watch('type');
+  // El monto se expresa en la moneda de la cuenta elegida (R-08).
+  const accountCurrency = accounts.find((a) => a.id === watch('accountId'))?.currency ?? currency;
   const relevantCategories = categories.filter((c) =>
     type === 'income' ? c.type === 'income' : c.type === 'expense',
   );
@@ -87,8 +89,8 @@ export function TransactionFormSheet({
       type: data.type,
       amount: data.amount,
       accountId: data.accountId,
-      toAccountId: data.type === 'transfer' ? data.toAccountId : null,
-      categoryId: data.type === 'transfer' ? null : data.categoryId,
+      toAccountId: null,
+      categoryId: data.categoryId,
       description: data.description || null,
       date: data.date,
       notes: data.notes || null,
@@ -118,7 +120,6 @@ export function TransactionFormSheet({
               options={[
                 { value: 'expense', label: 'Gasto' },
                 { value: 'income', label: 'Ingreso' },
-                { value: 'transfer', label: 'Transferencia' },
               ]}
             />
           )}
@@ -130,7 +131,7 @@ export function TransactionFormSheet({
           render={({ field }) => (
             <AmountInput
               label="Monto"
-              currency={currency}
+              currency={accountCurrency}
               value={field.value}
               onChange={field.onChange}
               error={errors.amount?.message}
@@ -139,7 +140,7 @@ export function TransactionFormSheet({
         />
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="tx-account">{type === 'transfer' ? 'Desde' : 'Cuenta'}</Label>
+          <Label htmlFor="tx-account">Cuenta</Label>
           <Select id="tx-account" {...register('accountId')}>
             <option value="">Elige una cuenta</option>
             {accounts.map((a) => (
@@ -153,37 +154,20 @@ export function TransactionFormSheet({
           ) : null}
         </div>
 
-        {type === 'transfer' ? (
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="tx-to-account">Hacia</Label>
-            <Select id="tx-to-account" {...register('toAccountId')}>
-              <option value="">Elige la cuenta destino</option>
-              {accounts.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.emoji} {a.name}
-                </option>
-              ))}
-            </Select>
-            {errors.toAccountId ? (
-              <p className="text-caption text-destructive">{errors.toAccountId.message}</p>
-            ) : null}
-          </div>
-        ) : (
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="tx-category">Categoría</Label>
-            <Select id="tx-category" {...register('categoryId')}>
-              <option value="">Elige una categoría</option>
-              {relevantCategories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.emoji} {c.name}
-                </option>
-              ))}
-            </Select>
-            {errors.categoryId ? (
-              <p className="text-caption text-destructive">{errors.categoryId.message}</p>
-            ) : null}
-          </div>
-        )}
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="tx-category">Categoría</Label>
+          <Select id="tx-category" {...register('categoryId')}>
+            <option value="">Elige una categoría</option>
+            {relevantCategories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.emoji} {c.name}
+              </option>
+            ))}
+          </Select>
+          {errors.categoryId ? (
+            <p className="text-caption text-destructive">{errors.categoryId.message}</p>
+          ) : null}
+        </div>
 
         <TextField
           label="Descripción"
@@ -203,10 +187,13 @@ export function TransactionFormSheet({
         <Button
           variant="danger"
           className="mt-3 w-full"
-          onClick={() => {
-            if (window.confirm('¿Eliminar este movimiento?')) {
-              remove.mutate(transaction.id, { onSuccess: onClose });
-            }
+          onClick={async () => {
+            const ok = await confirm({
+              title: '¿Eliminar este movimiento?',
+              description: 'Tus saldos y reportes se recalcularán.',
+              emoji: '💸',
+            });
+            if (ok) remove.mutate(transaction.id, { onSuccess: onClose });
           }}
         >
           Eliminar

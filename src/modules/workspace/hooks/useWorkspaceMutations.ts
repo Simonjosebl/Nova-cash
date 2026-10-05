@@ -30,13 +30,14 @@ export function useUpdateWorkspace(workspaceId: string) {
   });
 }
 
+/** Elimina un Workspace. Si era el activo, el activo pasa al primero que quede. */
 export function useDeleteWorkspace() {
   const queryClient = useQueryClient();
   const clear = useWorkspaceStore((s) => s.clear);
   return useMutation({
     mutationFn: (id: string) => workspaceService.remove(id),
-    onSuccess: async () => {
-      clear();
+    onSuccess: async (_, id) => {
+      if (useWorkspaceStore.getState().activeWorkspaceId === id) clear();
       await queryClient.invalidateQueries({ queryKey: workspacesKey });
     },
   });

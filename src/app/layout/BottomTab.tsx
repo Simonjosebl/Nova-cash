@@ -1,34 +1,53 @@
 import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { ROUTES } from '@/shared/constants/routes';
+import { PRIMARY_NAV } from './navigation';
 
-/** Bottom Tab (Cap. 3.20 / 6.21): cinco pestañas con emojis de identidad. */
-const TABS: ReadonlyArray<{ to: string; emoji: string; label: string; end?: boolean }> = [
-  { to: ROUTES.home, emoji: '🏠', label: 'Inicio', end: true },
-  { to: ROUTES.transactions, emoji: '💸', label: 'Movimientos' },
-  { to: ROUTES.calendar, emoji: '📅', label: 'Calendario' },
-  { to: ROUTES.reports, emoji: '📊', label: 'Reportes' },
-  { to: ROUTES.profile, emoji: '👤', label: 'Perfil' },
-];
-
+/** Bottom Tab (Cap. 3.20 / 6.21 / R-06): cinco columnas iguales, solo en móvil y tablet. */
 export function BottomTab() {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card/95 backdrop-blur">
-      <ul className="mx-auto flex max-w-md items-stretch justify-between px-2 pb-[env(safe-area-inset-bottom)]">
-        {TABS.map((tab) => (
-          <li key={tab.to} className="flex-1">
+    <nav
+      aria-label="Navegación principal"
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card/90 backdrop-blur-lg lg:hidden"
+    >
+      <ul className="mx-auto grid max-w-2xl grid-cols-5 px-1 pb-[env(safe-area-inset-bottom)]">
+        {PRIMARY_NAV.map((item) => (
+          <li key={item.to} className="min-w-0">
             <NavLink
-              to={tab.to}
-              end={tab.end}
+              to={item.to}
+              end={item.end}
               className={({ isActive }) =>
                 cn(
-                  'flex flex-col items-center gap-0.5 py-2 text-small transition-colors',
-                  isActive ? 'text-primary' : 'text-muted-foreground',
+                  'relative flex h-16 flex-col items-center justify-center gap-1 transition-colors',
+                  isActive ? 'text-foreground' : 'text-muted-foreground',
                 )
               }
             >
-              <span className="text-xl">{tab.emoji}</span>
-              <span>{tab.label}</span>
+              {({ isActive }) => (
+                <>
+                  {isActive ? (
+                    <span
+                      aria-hidden
+                      className="absolute top-0 h-[3px] w-8 rounded-b-full bg-accent"
+                    />
+                  ) : null}
+                  <span
+                    className={cn(
+                      'text-[22px] leading-none transition-transform',
+                      isActive && 'scale-110',
+                    )}
+                  >
+                    {item.emoji}
+                  </span>
+                  <span
+                    className={cn(
+                      'w-full truncate px-0.5 text-center text-[11px] leading-none',
+                      isActive ? 'font-semibold' : 'font-medium',
+                    )}
+                  >
+                    {item.label}
+                  </span>
+                </>
+              )}
             </NavLink>
           </li>
         ))}

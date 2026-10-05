@@ -1,14 +1,24 @@
 import { useForm } from 'react-hook-form';
+import { Link } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/shared/ui/button';
 import { TextField } from '@/shared/ui/text-field';
 import { getErrorMessage } from '@/shared/types/app-error';
+import { ROUTES } from '@/shared/constants/routes';
+import { SplashScreen } from '@/app/screens/SplashScreen';
+import { useAuth } from '../hooks/useAuth';
 import { AuthShell } from '../components/AuthShell';
 import { FormError } from '../components/FormError';
 import { resetPasswordSchema, type ResetPasswordInput } from '../schemas/auth.schema';
 import { useResetPassword } from '../hooks/useResetPassword';
 
+/**
+ * Nueva contraseña (Cap. 6.4). Se llega desde el enlace del correo, que abre una sesión de
+ * recuperación. Sin esa sesión (enlace vencido, usado u abierto en otro navegador) se ofrece
+ * pedir uno nuevo.
+ */
 export function ResetPasswordPage() {
+  const { isLoading, isAuthenticated } = useAuth();
   const {
     register,
     handleSubmit,
@@ -18,6 +28,25 @@ export function ResetPasswordPage() {
 
   const onSubmit = handleSubmit((data) => reset.mutate(data));
 
+  if (isLoading) return <SplashScreen />;
+
+  if (!isAuthenticated) {
+    return (
+      <AuthShell title="Enlace no válido" subtitle="Tu enlace venció o ya fue usado">
+        <p className="text-center text-body text-muted-foreground">
+          Por seguridad, cada enlace sirve una sola vez y por tiempo limitado. Ábrelo en el mismo
+          navegador donde lo pediste o solicita uno nuevo.
+        </p>
+        <Button asChild>
+          <Link to={ROUTES.forgotPassword}>Pedir un enlace nuevo</Link>
+        </Button>
+        <Button variant="ghost" asChild>
+          <Link to={ROUTES.login}>Volver a ingresar</Link>
+        </Button>
+      </AuthShell>
+    );
+  }
+
   return (
     <AuthShell title="Nueva contraseña" subtitle="Elige una contraseña segura">
       <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
@@ -26,7 +55,7 @@ export function ResetPasswordPage() {
           label="Nueva contraseña"
           type="password"
           autoComplete="new-password"
-          placeholder="Mínimo 8 caracteres"
+          placeholder="Mínimo 10, con letras y números"
           error={errors.password?.message}
           {...register('password')}
         />

@@ -44,14 +44,14 @@ function service(data: ReportRow[]): ReportService {
 
 describe('ReportService.load', () => {
   it('suma ingresos y gastos, ignorando transferencias (RB-007)', async () => {
-    const data = await service(rows()).load('ws1', 'this_month');
+    const data = await service(rows()).load('ws1', 'COP', 'this_month');
     expect(data.income).toBe(3000);
     expect(data.expense).toBe(1000);
     expect(data.balance).toBe(2000);
   });
 
   it('construye el donut por categoría con porcentajes', async () => {
-    const data = await service(rows()).load('ws1', 'this_month');
+    const data = await service(rows()).load('ws1', 'COP', 'this_month');
     const comida = data.expenseByCategory.find((s) => s.name === 'Comida');
     expect(comida?.percent).toBe(80);
     expect(data.expenseByCategory.every((s) => s.color)).toBe(true);
@@ -65,13 +65,13 @@ describe('ReportService.load', () => {
       categoryName: `Cat${i}`,
       categoryEmoji: '🏷️',
     }));
-    const data = await service(many).load('ws1', 'this_month');
+    const data = await service(many).load('ws1', 'COP', 'this_month');
     expect(data.expenseByCategory.length).toBe(7);
     expect(data.expenseByCategory.some((s) => s.name === 'Otros')).toBe(true);
   });
 
   it('devuelve un punto de tendencia por mes del periodo', async () => {
-    const data = await service(rows()).load('ws1', 'this_month');
+    const data = await service(rows()).load('ws1', 'COP', 'this_month');
     expect(data.trend.length).toBe(1);
     expect(data.trend[0]!.income).toBe(3000);
     expect(data.trend[0]!.expense).toBe(1000);

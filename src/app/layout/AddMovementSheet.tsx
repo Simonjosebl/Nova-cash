@@ -8,7 +8,7 @@ interface AddMovementSheetProps {
   onSelect: (type: TransactionType) => void;
 }
 
-/** Menú del FAB (Cap. 6.6): ¿Qué deseas registrar? Meta/Evento llegan en Fases 9/7. */
+/** Menú del FAB (Cap. 6.6): ¿Qué deseas registrar? Solo gasto o ingreso. */
 export function AddMovementSheet({ open, onClose, onSelect }: AddMovementSheetProps) {
   return (
     <BottomSheet open={open} onClose={onClose} title="¿Qué deseas registrar?">
@@ -18,25 +18,10 @@ export function AddMovementSheet({ open, onClose, onSelect }: AddMovementSheetPr
             key={a.type}
             type="button"
             onClick={() => onSelect(a.type)}
-            className="flex items-center gap-3 rounded-md border border-input bg-card px-4 py-3 text-left active:scale-[0.99]"
+            className="flex items-center gap-3 rounded-md border border-input bg-card px-4 py-3 text-left shadow-card-glow active:scale-[0.99] dark:shadow-card-glow-dark"
           >
             <span className="text-2xl">{a.emoji}</span>
             <span className="flex-1 text-body font-medium text-foreground">{a.label}</span>
-          </button>
-        ))}
-        {[
-          { emoji: '🎯', label: 'Meta' },
-          { emoji: '📅', label: 'Evento' },
-        ].map((a) => (
-          <button
-            key={a.label}
-            type="button"
-            disabled
-            className="flex items-center gap-3 rounded-md border border-input bg-card px-4 py-3 text-left opacity-60"
-          >
-            <span className="text-2xl">{a.emoji}</span>
-            <span className="flex-1 text-body font-medium text-foreground">{a.label}</span>
-            <span className="text-small text-muted-foreground">Pronto</span>
           </button>
         ))}
       </div>

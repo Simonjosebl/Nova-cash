@@ -16,7 +16,8 @@ import type {
  * (A futuro conviene una función RPC en Postgres para hacerlo en una sola ida al servidor.)
  */
 export interface IDashboardRepository {
-  loadAggregates(workspaceId: string): Promise<DashboardAggregates>;
+  /** Agregados del mes en la moneda predeterminada del espacio (R-08: sin conversión). */
+  loadAggregates(workspaceId: string, currency: string): Promise<DashboardAggregates>;
 }
 
 const TYPE_EMOJI: Record<string, string> = {
@@ -75,17 +76,17 @@ interface RecentRow {
 const one = <T>(v: T | T[] | null): T | null => (Array.isArray(v) ? (v[0] ?? null) : v);
 
 export class DashboardRepository implements IDashboardRepository {
-  async loadAggregates(workspaceId: string): Promise<DashboardAggregates> {
+  async loadAggregates(workspaceId: string, currency: string): Promise<DashboardAggregates> {
     const now = new Date();
     const { monthStart, monthEnd, prevStart, prevEnd } = monthBounds(now);
 
     const [balance, rangeRows, recentRows, upcomingPayments, budgetRows, goals] = await Promise.all(
       [
-        this.sumBalance(workspaceId),
-        this.rangeRows(workspaceId, prevStart, monthEnd),
+        this.sumBalance(workspaceId, currency),
+        this.rangeRows(workspaceId, currency, prevStart, monthEnd),
         this.recentRows(workspaceId),
         this.upcoming(workspaceId, now),
-        this.budgetRows(workspaceId),
+        this.budgetRows(workspaceId, currency),
         this.goals(workspaceId),
       ],
     );
@@ -114,12 +115,12 @@ export class DashboardRepository implements IDashboardRepository {
     };
   }
 
-  private async sumBalance(workspaceId: string): Promise<number> {
+  private async sumBalance(workspaceId: string, currency: string): Promise<number> {
     const { data, error } = await supabase
       .from('accounts')
       .select('current_balance')
       .eq('workspace_id', workspaceId)
-      .eq('is_archived', false);
+      .eq('currency', currency);
     if (error) return 0;
     return (data ?? []).reduce(
       (s, r) => s + Number((r as { current_balance: number | string }).current_balance),
@@ -127,11 +128,19 @@ export class DashboardRepository implements IDashboardRepository {
     );
   }
 
-  private async rangeRows(workspaceId: string, from: string, to: string): Promise<RangeRow[]> {
+  private async rangeRows(
+    workspaceId: string,
+    currency: string,
+    from: string,
+    to: string,
+  ): Promise<RangeRow[]> {
     const { data, error } = await supabase
       .from('transactions')
-      .select('type,amount,transaction_date,category_id, category:categories(name,emoji)')
+      .select(
+        'type,amount,transaction_date,category_id, category:categories(name,emoji), account:accounts!transactions_account_id_fkey!inner(currency)',
+      )
       .eq('workspace_id', workspaceId)
+      .eq('account.currency', currency)
       .eq('status', 'confirmed')
       .gte('transaction_date', from)
       .lte('transaction_date', to);
@@ -139,11 +148,12 @@ export class DashboardRepository implements IDashboardRepository {
     return (data ?? []) as unknown as RangeRow[];
   }
 
-  private async budgetRows(workspaceId: string): Promise<BudgetRow[]> {
+  private async budgetRows(workspaceId: string, currency: string): Promise<BudgetRow[]> {
     const { data, error } = await supabase
       .from('budgets')
       .select('amount,category_id, category:categories(name,emoji)')
-      .eq('workspace_id', workspaceId);
+      .eq('workspace_id', workspaceId)
+      .eq('currency', currency);
     if (error) return [];
     return (data ?? []) as unknown as BudgetRow[];
   }

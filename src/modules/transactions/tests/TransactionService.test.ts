@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { isAppError } from '@/shared/types/app-error';
 import { TransactionService } from '../services/TransactionService';
 import type { ITransactionRepository } from '../repositories/TransactionRepository';
 import type { CreateTransactionDTO } from '../types/transaction.types';
@@ -17,20 +18,19 @@ describe('TransactionService', () => {
     service = new TransactionService(repo);
   });
 
-  it('en transferencia elimina la categoría (RB-007/015)', async () => {
+  it('rechaza transferencias (R-15)', async () => {
     const dto: CreateTransactionDTO = {
       type: 'transfer',
       amount: 500,
       accountId: 'a1',
       toAccountId: 'a2',
-      categoryId: 'should-be-removed',
+      categoryId: null,
       date: '2026-07-05',
     };
-    await service.create('ws1', dto);
-    expect(repo.create).toHaveBeenCalledWith(
-      'ws1',
-      expect.objectContaining({ categoryId: null, toAccountId: 'a2' }),
+    await expect(service.create('ws1', dto)).rejects.toSatisfy(
+      (e) => isAppError(e) && e.code === 'TYPE_NOT_SUPPORTED',
     );
+    expect(repo.create).not.toHaveBeenCalled();
   });
 
   it('en gasto elimina la cuenta destino', async () => {

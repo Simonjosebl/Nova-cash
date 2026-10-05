@@ -8,18 +8,17 @@ export interface Account {
   emoji: string;
   type: AccountType;
   currency: string;
-  openingBalance: number;
   currentBalance: number;
   color: string | null;
   position: number;
-  isArchived: boolean;
 }
 
 export interface CreateAccountDTO {
   name: string;
   emoji: string;
   type: AccountType;
-  openingBalance: number;
+  /** Moneda de la cuenta; por defecto la del espacio (R-08). */
+  currency: string;
   color?: string | null;
 }
 

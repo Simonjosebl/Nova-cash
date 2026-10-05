@@ -50,7 +50,6 @@ export function TransactionsPage() {
           { value: '', label: 'Todos' },
           { value: 'expense', label: 'Gastos' },
           { value: 'income', label: 'Ingresos' },
-          { value: 'transfer', label: 'Transfer.' },
         ]}
       />
 

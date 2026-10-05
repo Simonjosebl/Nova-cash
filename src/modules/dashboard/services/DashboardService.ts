@@ -14,7 +14,7 @@ export class DashboardService {
   constructor(private readonly repo: IDashboardRepository = dashboardRepository) {}
 
   async loadDashboard(workspaceId: string, currency: string): Promise<DashboardData> {
-    const agg = await this.repo.loadAggregates(workspaceId);
+    const agg = await this.repo.loadAggregates(workspaceId, currency);
 
     const insightInput: InsightInput = {
       currency,

@@ -23,6 +23,7 @@ export default {
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
         background: 'hsl(var(--background))',
+        'surface-tint': 'hsl(var(--surface-tint))',
         foreground: 'hsl(var(--foreground))',
         primary: {
           DEFAULT: 'hsl(var(--primary))',
@@ -96,6 +97,14 @@ export default {
         card: '0 1px 3px 0 rgb(15 23 42 / 0.06), 0 1px 2px -1px rgb(15 23 42 / 0.05)',
         sheet: '0 -4px 24px -2px rgb(15 23 42 / 0.12)',
         modal: '0 12px 40px -8px rgb(15 23 42 / 0.24)',
+        // Tarjetas con halo sutil en el verde azulado de la N (contraste, R-16)
+        'card-glow':
+          '0 0 0 1px rgb(20 184 166 / 0.20), 0 1px 2px 0 rgb(15 23 42 / 0.05), 0 6px 16px -10px rgb(16 185 129 / 0.18)',
+        'card-glow-dark':
+          '0 0 0 1px rgb(20 184 166 / 0.22), 0 1px 2px 0 rgb(0 0 0 / 0.30), 0 6px 18px -12px rgb(20 184 166 / 0.20)',
+        // Barra lateral elevada sobre el contenido (sombra hacia la derecha, R-06)
+        panel: '10px 0 36px -14px rgb(15 23 42 / 0.22), 2px 0 8px -4px rgb(15 23 42 / 0.10)',
+        'panel-dark': '12px 0 40px -12px rgb(0 0 0 / 0.65), 2px 0 10px -4px rgb(0 0 0 / 0.45)',
       },
       keyframes: {
         'accordion-down': {

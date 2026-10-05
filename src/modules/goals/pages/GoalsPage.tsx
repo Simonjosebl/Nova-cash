@@ -26,7 +26,7 @@ export function GoalsPage() {
   const [detail, setDetail] = useState<GoalProgress | null>(null);
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col gap-6 px-6 py-8">
+    <div className="flex flex-col gap-6">
       <header className="flex items-center gap-3">
         <Button variant="ghost" size="icon" asChild aria-label="Volver">
           <Link to={ROUTES.home}>
@@ -110,6 +110,6 @@ export function GoalsPage() {
           }}
         />
       ) : null}
-    </main>
+    </div>
   );
 }

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowLeft, X } from 'lucide-react';
+import { ArrowLeft, ChevronRight, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/shared/ui/button';
 import { Card } from '@/shared/ui/card';
@@ -28,7 +28,7 @@ export function NotificationsPage() {
   const hasUnread = notifications.some((n) => !n.read);
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col gap-6 px-6 py-8">
+    <div className="flex flex-col gap-6">
       <header className="flex items-center gap-3">
         <Button variant="ghost" size="icon" asChild aria-label="Volver">
           <Link to={ROUTES.home}>
@@ -47,6 +47,20 @@ export function NotificationsPage() {
         ) : null}
       </header>
 
+      <Link
+        to={ROUTES.reminders}
+        className="flex items-center gap-3 rounded-lg border border-accent/30 bg-accent/10 px-4 py-3 transition-colors hover:bg-accent/15"
+      >
+        <span className="text-2xl">⏰</span>
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="text-body font-semibold text-foreground">Recordatorios</span>
+          <span className="text-caption text-muted-foreground">
+            Configura avisos para registrar tus gastos e ingresos
+          </span>
+        </span>
+        <ChevronRight className="size-5 text-muted-foreground" />
+      </Link>
+
       {isLoading ? (
         <div className="flex flex-col gap-2">
           <Skeleton className="h-16 rounded-lg" />
@@ -56,7 +70,7 @@ export function NotificationsPage() {
         <EmptyState
           emoji="🔔"
           title="Sin notificaciones"
-          description="Te avisaremos de pagos, presupuestos y metas."
+          description="Te avisaremos de pagos, presupuestos, metas y de tus recordatorios."
         />
       ) : (
         <section className="flex flex-col gap-2">
@@ -91,6 +105,6 @@ export function NotificationsPage() {
           ))}
         </section>
       )}
-    </main>
+    </div>
   );
 }

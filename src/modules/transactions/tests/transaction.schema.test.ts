@@ -26,28 +26,7 @@ describe('transactionSchema', () => {
     expect(transactionSchema.safeParse({ ...expense, accountId: '' }).success).toBe(false);
   });
 
-  it('transferencia exige cuenta destino distinta', () => {
-    const sameAccount = {
-      type: 'transfer' as const,
-      amount: 500,
-      accountId: 'acc1',
-      toAccountId: 'acc1',
-      date: '2026-07-05',
-    };
-    expect(transactionSchema.safeParse(sameAccount).success).toBe(false);
-
-    const valid = { ...sameAccount, toAccountId: 'acc2' };
-    expect(transactionSchema.safeParse(valid).success).toBe(true);
-  });
-
-  it('transferencia sin destino es inválida', () => {
-    expect(
-      transactionSchema.safeParse({
-        type: 'transfer',
-        amount: 500,
-        accountId: 'acc1',
-        date: '2026-07-05',
-      }).success,
-    ).toBe(false);
+  it('no admite transferencias (R-15)', () => {
+    expect(transactionSchema.safeParse({ ...expense, type: 'transfer' }).success).toBe(false);
   });
 });

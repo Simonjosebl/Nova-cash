@@ -23,17 +23,6 @@ export const ROLE_LABELS: Record<MemberRole, string> = {
   viewer: 'Lector',
 };
 
-/** Monedas soportadas en el MVP (mercado LatAm — Cap. 1). */
-export const CURRENCIES: ReadonlyArray<{ code: string; label: string }> = [
-  { code: 'COP', label: 'Peso colombiano (COP)' },
-  { code: 'USD', label: 'Dólar (USD)' },
-  { code: 'MXN', label: 'Peso mexicano (MXN)' },
-  { code: 'ARS', label: 'Peso argentino (ARS)' },
-  { code: 'CLP', label: 'Peso chileno (CLP)' },
-  { code: 'PEN', label: 'Sol peruano (PEN)' },
-  { code: 'EUR', label: 'Euro (EUR)' },
-];
-
 /** Emojis sugeridos para el selector rápido (Cap. 3.13 — emojis como identidad). */
 export const SUGGESTED_EMOJIS = [
   '👤',
@@ -49,3 +38,6 @@ export const SUGGESTED_EMOJIS = [
   '🌱',
   '⭐',
 ];
+
+/** Todo colaborador invitado entra como editor (R-11). El administrador es el propietario. */
+export const COLLABORATOR_ROLE = 'editor' as const;

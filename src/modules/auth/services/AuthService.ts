@@ -1,4 +1,5 @@
 import type { Session } from '@supabase/supabase-js';
+import { LEGAL_INFO } from '@/shared/constants/legal';
 import {
   authRepository,
   mapSupabaseUser,
@@ -18,14 +19,21 @@ export class AuthService {
     return { session, user: mapSupabaseUser(session.user) };
   }
 
-  /** Registro. Si el proyecto exige confirmación de correo, session llega null. */
+  /**
+   * Registro. Deja evidencia de la autorización de datos (versión + fecha, R-05).
+   * Si el proyecto exige confirmación de correo, session llega null.
+   */
   async register(dto: SignUpDTO): Promise<{ session: Session | null; needsConfirmation: boolean }> {
-    const session = await this.repo.signUp(dto);
+    const session = await this.repo.signUp({
+      ...dto,
+      policiesVersion: LEGAL_INFO.version,
+      policiesAcceptedAt: new Date().toISOString(),
+    });
     return { session, needsConfirmation: session === null };
   }
 
-  async sendMagicLink(email: string, redirectTo: string): Promise<void> {
-    await this.repo.sendMagicLink(email, redirectTo);
+  async loginWithGoogle(redirectTo: string): Promise<void> {
+    await this.repo.signInWithGoogle(redirectTo);
   }
 
   async sendPasswordReset(email: string, redirectTo: string): Promise<void> {

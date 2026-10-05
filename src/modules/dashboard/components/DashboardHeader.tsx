@@ -21,7 +21,13 @@ export function DashboardHeader() {
       <div className="flex items-center justify-between">
         <WorkspaceSwitcher />
         <div className="flex items-center">
-          <Button variant="ghost" size="icon" asChild aria-label="Notificaciones">
+          <Button
+            variant="ghost"
+            size="icon"
+            asChild
+            aria-label="Notificaciones"
+            className="lg:hidden"
+          >
             <Link to={ROUTES.notifications} className="relative">
               <Bell />
               {unread > 0 ? (
@@ -31,7 +37,7 @@ export function DashboardHeader() {
               ) : null}
             </Link>
           </Button>
-          <Button variant="ghost" size="icon" asChild aria-label="Perfil">
+          <Button variant="ghost" size="icon" asChild aria-label="Perfil" className="lg:hidden">
             <Link to={ROUTES.profile}>
               <UserRound />
             </Link>

@@ -85,10 +85,7 @@ export class CategoryRepository implements ICategoryRepository {
   }
 
   async softDelete(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('categories')
-      .update({ deleted_at: new Date().toISOString() })
-      .eq('id', id);
+    const { error } = await supabase.rpc('soft_delete_record', { p_table: 'categories', p_id: id });
     if (error) throw toAppError(error, 'No pudimos eliminar la categoría.');
   }
 

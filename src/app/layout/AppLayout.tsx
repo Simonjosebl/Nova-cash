@@ -5,10 +5,13 @@ import { useActiveWorkspace } from '@/modules/workspace/hooks/useWorkspaces';
 import { TransactionFormSheet } from '@/modules/transactions/components/TransactionFormSheet';
 import type { TransactionType } from '@/modules/transactions/types/transaction.types';
 import { BottomTab } from './BottomTab';
+import { Sidebar } from './Sidebar';
+import { TopBar } from './TopBar';
 import { AddMovementSheet } from './AddMovementSheet';
 
 /**
- * Shell de la app (Cap. 3.20 / 6.21): contenido + FAB (siempre visible) + bottom tab.
+ * Shell de la app (Cap. 3.20 / 6.21 / R-06). Móvil: contenido + FAB + Bottom Tab.
+ * Computador: barra lateral (con su botón de registro) + contenido ancho.
  * El FAB abre el menú de registro y luego el formulario de movimiento.
  */
 export function AppLayout() {
@@ -18,11 +21,16 @@ export function AppLayout() {
 
   return (
     <div className="relative min-h-dvh bg-background">
-      <main className="mx-auto max-w-md px-6 pb-32 pt-6">
-        <Outlet />
-      </main>
+      <Sidebar onAdd={() => setActionsOpen(true)} />
 
-      <div className="fixed bottom-[76px] left-1/2 z-40 -translate-x-1/2">
+      <div className="lg:pl-64">
+        <TopBar />
+        <main className="mx-auto w-full max-w-md px-6 pb-36 pt-6 md:max-w-2xl lg:max-w-4xl lg:px-10 lg:pb-16 lg:pt-4">
+          <Outlet />
+        </main>
+      </div>
+
+      <div className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom))] left-1/2 z-40 -translate-x-1/2 lg:hidden">
         <Fab onClick={() => setActionsOpen(true)} />
       </div>
 

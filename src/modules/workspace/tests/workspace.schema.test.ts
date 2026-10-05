@@ -16,14 +16,8 @@ describe('createWorkspaceSchema', () => {
 });
 
 describe('inviteMemberSchema', () => {
-  it('acepta editor y lector', () => {
-    expect(inviteMemberSchema.safeParse({ email: 'a@b.com', role: 'editor' }).success).toBe(true);
-    expect(inviteMemberSchema.safeParse({ email: 'a@b.com', role: 'viewer' }).success).toBe(true);
-  });
-  it('no permite invitar como administrador', () => {
-    expect(inviteMemberSchema.safeParse({ email: 'a@b.com', role: 'admin' }).success).toBe(false);
-  });
-  it('rechaza correo inválido', () => {
-    expect(inviteMemberSchema.safeParse({ email: 'x', role: 'editor' }).success).toBe(false);
+  it('solo pide un correo válido (el rol es siempre editor)', () => {
+    expect(inviteMemberSchema.safeParse({ email: 'a@b.com' }).success).toBe(true);
+    expect(inviteMemberSchema.safeParse({ email: 'no-es-correo' }).success).toBe(false);
   });
 });

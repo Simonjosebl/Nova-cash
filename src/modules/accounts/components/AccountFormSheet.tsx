@@ -5,17 +5,13 @@ import { Button } from '@/shared/ui/button';
 import { TextField } from '@/shared/ui/text-field';
 import { Label } from '@/shared/ui/label';
 import { Select } from '@/shared/ui/select';
-import { AmountInput } from '@/shared/ui/amount-input';
+import { CurrencyPicker } from '@/shared/ui/currency-picker';
 import { EmojiPicker } from '@/shared/ui/emoji-picker';
 import { getErrorMessage } from '@/shared/types/app-error';
+import { useConfirm } from '@/shared/hooks/useConfirm';
 import { FormError } from '@/modules/auth/components/FormError';
 import { createAccountSchema, type CreateAccountInput } from '../schemas/account.schema';
-import {
-  useArchiveAccount,
-  useCreateAccount,
-  useDeleteAccount,
-  useUpdateAccount,
-} from '../hooks/useAccountMutations';
+import { useCreateAccount, useDeleteAccount, useUpdateAccount } from '../hooks/useAccountMutations';
 import { ACCOUNT_EMOJIS, ACCOUNT_TYPES } from '../constants/account.constants';
 import type { Account } from '../types/account.types';
 
@@ -23,11 +19,15 @@ interface AccountFormSheetProps {
   open: boolean;
   onClose: () => void;
   workspaceId: string;
+  /** Moneda predeterminada del espacio (R-08). */
   currency: string;
   account?: Account;
 }
 
-/** Formulario de cuenta (Cap. 6.8): emoji, nombre, tipo, saldo inicial. Crear/editar. */
+/**
+ * Formulario de cuenta (Cap. 6.8 / R-09): emoji, nombre, tipo y moneda. Toda cuenta nace
+ * con saldo 0 y se mueve con ingresos y gastos. La moneda solo se elige al crear.
+ */
 export function AccountFormSheet({
   open,
   onClose,
@@ -36,10 +36,10 @@ export function AccountFormSheet({
   account,
 }: AccountFormSheetProps) {
   const isEdit = !!account;
-  const create = useCreateAccount(workspaceId, currency);
+  const create = useCreateAccount(workspaceId);
   const update = useUpdateAccount(workspaceId);
-  const archive = useArchiveAccount(workspaceId);
   const remove = useDeleteAccount(workspaceId);
+  const confirm = useConfirm();
 
   const {
     register,
@@ -49,13 +49,8 @@ export function AccountFormSheet({
   } = useForm<CreateAccountInput>({
     resolver: zodResolver(createAccountSchema),
     defaultValues: account
-      ? {
-          name: account.name,
-          emoji: account.emoji,
-          type: account.type,
-          openingBalance: account.openingBalance,
-        }
-      : { name: '', emoji: '💵', type: 'cash', openingBalance: 0 },
+      ? { name: account.name, emoji: account.emoji, type: account.type, currency: account.currency }
+      : { name: '', emoji: '💵', type: 'cash', currency },
   });
 
   const onSubmit = handleSubmit((data) => {
@@ -68,6 +63,17 @@ export function AccountFormSheet({
       create.mutate(data, { onSuccess: onClose });
     }
   });
+
+  const onDelete = async () => {
+    if (!account) return;
+    const ok = await confirm({
+      title: '¿Eliminar esta cuenta?',
+      description:
+        'También se eliminarán sus movimientos y dejarán de contar en tus saldos y reportes.',
+      emoji: account.emoji,
+    });
+    if (ok) remove.mutate(account.id, { onSuccess: onClose });
+  };
 
   const error = create.error ?? update.error;
   const isPending = create.isPending || update.isPending;
@@ -108,55 +114,44 @@ export function AccountFormSheet({
 
         <Controller
           control={control}
-          name="openingBalance"
+          name="currency"
           render={({ field }) => (
-            <AmountInput
-              label="Saldo inicial"
-              currency={currency}
+            <CurrencyPicker
+              id="account-currency"
+              label="Moneda"
               value={field.value}
               onChange={field.onChange}
               disabled={isEdit}
-              error={errors.openingBalance?.message}
+              error={errors.currency?.message}
+              hint={
+                isEdit
+                  ? 'La moneda de una cuenta no se cambia después de crearla.'
+                  : 'La cuenta empieza en 0 y se mueve con tus ingresos y gastos.'
+              }
             />
           )}
         />
-        {isEdit ? (
-          <p className="-mt-2 text-caption text-muted-foreground">
-            El saldo inicial no se edita; se ajusta con movimientos.
-          </p>
-        ) : null}
 
         <Button type="submit" disabled={isPending}>
           {isPending ? 'Guardando…' : isEdit ? 'Guardar cambios' : 'Crear cuenta'}
         </Button>
       </form>
 
-      {isEdit && account ? (
-        <div className="mt-3 flex gap-2">
-          <Button
-            variant="secondary"
-            className="flex-1"
-            onClick={() =>
-              archive.mutate(
-                { id: account.id, archived: !account.isArchived },
-                { onSuccess: onClose },
-              )
-            }
-          >
-            {account.isArchived ? 'Desarchivar' : 'Archivar'}
-          </Button>
-          <Button
-            variant="danger"
-            className="flex-1"
-            onClick={() => {
-              if (window.confirm('¿Eliminar esta cuenta?')) {
-                remove.mutate(account.id, { onSuccess: onClose });
-              }
-            }}
-          >
-            Eliminar
-          </Button>
+      {remove.isError ? (
+        <div className="mt-3">
+          <FormError message={getErrorMessage(remove.error)} />
         </div>
+      ) : null}
+
+      {isEdit ? (
+        <Button
+          variant="danger"
+          className="mt-3 w-full"
+          onClick={onDelete}
+          disabled={remove.isPending}
+        >
+          {remove.isPending ? 'Eliminando…' : 'Eliminar cuenta'}
+        </Button>
       ) : null}
     </BottomSheet>
   );

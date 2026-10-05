@@ -17,9 +17,9 @@ const MAX_SLICES = 6;
 export class ReportService {
   constructor(private readonly repo: IReportRepository = reportRepository) {}
 
-  async load(workspaceId: string, period: ReportPeriod): Promise<ReportData> {
+  async load(workspaceId: string, currency: string, period: ReportPeriod): Promise<ReportData> {
     const { from, to, months } = periodRange(period);
-    const rows = await this.repo.fetchRange(workspaceId, from, to);
+    const rows = await this.repo.fetchRange(workspaceId, currency, from, to);
 
     const income = sumType(rows, 'income');
     const expense = sumType(rows, 'expense');

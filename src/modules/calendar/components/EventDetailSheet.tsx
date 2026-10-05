@@ -16,6 +16,7 @@ import {
 } from '../hooks/useCalendarMutations';
 import { EVENT_STATUS_LABELS } from '../constants/calendar.constants';
 import type { CalendarEvent } from '../types/calendar.types';
+import { useConfirm } from '@/shared/hooks/useConfirm';
 
 interface Props {
   open: boolean;
@@ -47,6 +48,7 @@ export function EventDetailSheet({
   const register = useRegisterPayment(workspaceId);
   const postpone = usePostponeEvent(workspaceId);
   const cancel = useCancelEvent(workspaceId);
+  const confirm = useConfirm();
   const remove = useDeleteEvent(workspaceId);
 
   const [accountId, setAccountId] = useState(event.accountId ?? accounts[0]?.id ?? '');
@@ -115,10 +117,13 @@ export function EventDetailSheet({
               <Button
                 variant="danger"
                 className="flex-1"
-                onClick={() => {
-                  if (window.confirm('¿Eliminar este evento?')) {
-                    remove.mutate(event.id, { onSuccess: onClose });
-                  }
+                onClick={async () => {
+                  const ok = await confirm({
+                    title: '¿Eliminar este evento?',
+                    description: 'Se quitará del calendario y de tus próximos pagos.',
+                    emoji: '📅',
+                  });
+                  if (ok) remove.mutate(event.id, { onSuccess: onClose });
                 }}
               >
                 Eliminar

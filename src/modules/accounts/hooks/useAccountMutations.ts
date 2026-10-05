@@ -1,24 +1,27 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { dashboardKey } from '@/modules/dashboard/hooks/useDashboard';
 import { accountService } from '../services/AccountService';
-import { accountsKey, archivedAccountsKey } from './useAccounts';
+import { accountsKey } from './useAccounts';
+import { budgetsKey } from '@/modules/budgets/hooks/useBudgets';
+import { transactionsKey } from '@/modules/transactions/hooks/useTransactions';
 import type { CreateAccountInput, UpdateAccountInput } from '../schemas/account.schema';
 
-/** Invalida cuentas + dashboard (el saldo depende de las cuentas). */
+/** Invalida cuentas, dashboard, movimientos y presupuestos (eliminar una cuenta oculta sus movimientos). */
 function useInvalidate(workspaceId: string) {
   const queryClient = useQueryClient();
   return () =>
     Promise.all([
       queryClient.invalidateQueries({ queryKey: accountsKey(workspaceId) }),
-      queryClient.invalidateQueries({ queryKey: archivedAccountsKey(workspaceId) }),
       queryClient.invalidateQueries({ queryKey: dashboardKey(workspaceId) }),
+      queryClient.invalidateQueries({ queryKey: transactionsKey(workspaceId) }),
+      queryClient.invalidateQueries({ queryKey: budgetsKey(workspaceId) }),
     ]);
 }
 
-export function useCreateAccount(workspaceId: string, currency: string) {
+export function useCreateAccount(workspaceId: string) {
   const invalidate = useInvalidate(workspaceId);
   return useMutation({
-    mutationFn: (input: CreateAccountInput) => accountService.create(workspaceId, currency, input),
+    mutationFn: (input: CreateAccountInput) => accountService.create(workspaceId, input),
     onSuccess: invalidate,
   });
 }
@@ -32,27 +35,10 @@ export function useUpdateAccount(workspaceId: string) {
   });
 }
 
-export function useArchiveAccount(workspaceId: string) {
-  const invalidate = useInvalidate(workspaceId);
-  return useMutation({
-    mutationFn: ({ id, archived }: { id: string; archived: boolean }) =>
-      archived ? accountService.archive(id) : accountService.unarchive(id),
-    onSuccess: invalidate,
-  });
-}
-
 export function useDeleteAccount(workspaceId: string) {
   const invalidate = useInvalidate(workspaceId);
   return useMutation({
     mutationFn: (id: string) => accountService.remove(id),
-    onSuccess: invalidate,
-  });
-}
-
-export function useReorderAccounts(workspaceId: string) {
-  const invalidate = useInvalidate(workspaceId);
-  return useMutation({
-    mutationFn: (orderedIds: string[]) => accountService.reorder(orderedIds),
     onSuccess: invalidate,
   });
 }

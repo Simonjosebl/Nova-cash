@@ -33,9 +33,13 @@ export function DashboardPage() {
           ))}
 
           <BalanceSummary balance={data.balance} summary={data.summary} currency={currency} />
-          <UpcomingPayments payments={data.upcomingPayments} />
-          <CategoriesList categories={data.categories} currency={currency} />
-          <RecentActivity items={data.recentActivity} currency={currency} />
+          <div className="grid gap-6 lg:grid-cols-2">
+            <UpcomingPayments payments={data.upcomingPayments} />
+            <CategoriesList categories={data.categories} currency={currency} />
+            <div className="lg:col-span-2">
+              <RecentActivity items={data.recentActivity} currency={currency} />
+            </div>
+          </div>
         </>
       )}
     </div>

@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { MAX_SEARCH_LENGTH } from '@/shared/constants/limits';
 import { toAppError } from '@/shared/types/db-error';
 import { PAGE_SIZE } from '../constants/transaction.constants';
 import type {
@@ -81,7 +82,11 @@ export class TransactionRepository implements ITransactionRepository {
     if (filters.categoryId) query = query.eq('category_id', filters.categoryId);
     if (filters.dateFrom) query = query.gte('transaction_date', filters.dateFrom);
     if (filters.dateTo) query = query.lte('transaction_date', filters.dateTo);
-    if (filters.search) query = query.ilike('description', `%${filters.search}%`);
+    if (filters.search) {
+      // Escapa comodines de LIKE para que el texto se busque literal (R-18).
+      const term = filters.search.slice(0, MAX_SEARCH_LENGTH).replace(/[%_\\]/g, (c) => `\\${c}`);
+      query = query.ilike('description', `%${term}%`);
+    }
 
     const limit = filters.limit ?? PAGE_SIZE;
     const offset = filters.offset ?? 0;
@@ -134,10 +139,10 @@ export class TransactionRepository implements ITransactionRepository {
   }
 
   async softDelete(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('transactions')
-      .update({ deleted_at: new Date().toISOString() })
-      .eq('id', id);
+    const { error } = await supabase.rpc('soft_delete_record', {
+      p_table: 'transactions',
+      p_id: id,
+    });
     if (error) throw toAppError(error, 'No pudimos eliminar el movimiento.');
   }
 }

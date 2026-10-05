@@ -47,6 +47,10 @@ export function ForgotPasswordPage() {
           <Button type="submit" disabled={forgot.isPending}>
             {forgot.isPending ? 'Enviando…' : 'Enviar instrucciones'}
           </Button>
+          <p className="text-center text-small text-muted-foreground">
+            ¿Te registraste con Google? No necesitas contraseña: ingresa con el botón “Continuar con
+            Google”.
+          </p>
         </form>
       )}
     </AuthShell>

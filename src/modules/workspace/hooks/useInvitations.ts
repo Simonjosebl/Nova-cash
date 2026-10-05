@@ -28,3 +28,9 @@ export function useCancelInvitation(workspaceId: string) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: invitationsKey(workspaceId) }),
   });
 }
+
+export function useResendInvitation() {
+  return useMutation({
+    mutationFn: (id: string) => workspaceService.resendInvitation(id),
+  });
+}

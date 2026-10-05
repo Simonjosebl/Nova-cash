@@ -1,6 +1,7 @@
 import { currentMonthRange } from '@/shared/utils/date';
 import { toPercent } from '@/shared/utils/money';
 import { budgetRepository, type IBudgetRepository } from '../repositories/BudgetRepository';
+import { spentKey } from '../utils/spentKey';
 import type {
   Budget,
   BudgetProgress,
@@ -12,7 +13,8 @@ import type {
 /**
  * BudgetService — control presupuestal (Cap. 4.14 / 6.12).
  * Calcula el avance del mes actual y su estado (normal / advertencia / excedido).
- * Nunca modifica transacciones (RB-009).
+ * Nunca modifica transacciones (RB-009). El gasto solo cuenta movimientos de cuentas en la
+ * misma moneda del presupuesto: no hay conversión automática (R-08).
  */
 export class BudgetService {
   constructor(private readonly repo: IBudgetRepository = budgetRepository) {}
@@ -25,7 +27,9 @@ export class BudgetService {
     ]);
 
     return budgets
-      .map((budget) => this.withProgress(budget, spentMap.get(budget.categoryId) ?? 0))
+      .map((budget) =>
+        this.withProgress(budget, spentMap.get(spentKey(budget.categoryId, budget.currency)) ?? 0),
+      )
       .sort((a, b) => b.percent - a.percent);
   }
 

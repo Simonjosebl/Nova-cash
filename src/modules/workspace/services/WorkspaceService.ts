@@ -3,11 +3,10 @@ import {
   workspaceRepository,
   type IWorkspaceRepository,
 } from '../repositories/WorkspaceRepository';
-import { MAX_MEMBERS } from '../constants/workspace.constants';
+import { COLLABORATOR_ROLE, MAX_MEMBERS } from '../constants/workspace.constants';
 import type {
   CreateWorkspaceDTO,
-  InviteMemberDTO,
-  MemberRole,
+  InviteInput,
   UpdateWorkspaceDTO,
   Workspace,
   WorkspaceInvitation,
@@ -27,9 +26,9 @@ export class WorkspaceService {
     return this.repo.listMine();
   }
 
-  async create(dto: CreateWorkspaceDTO): Promise<Workspace> {
-    const profileId = await this.repo.getMyProfileId();
-    return this.repo.create(dto, profileId);
+  create(dto: CreateWorkspaceDTO): Promise<Workspace> {
+    // El servidor (RPC) deriva el owner de la sesión.
+    return this.repo.create(dto);
   }
 
   update(id: string, dto: UpdateWorkspaceDTO): Promise<Workspace> {
@@ -48,9 +47,12 @@ export class WorkspaceService {
     return this.repo.listInvitations(workspaceId);
   }
 
-  /** Invita a un colaborador validando límite (RB-003) y duplicados. */
-  async invite(workspaceId: string, dto: InviteMemberDTO): Promise<WorkspaceInvitation> {
-    const email = dto.email.toLowerCase().trim();
+  /**
+   * Invita a un colaborador (siempre editor — R-11) validando límite (RB-003) y duplicados,
+   * y le envía el correo con el enlace de la invitación.
+   */
+  async invite(workspaceId: string, input: InviteInput): Promise<WorkspaceInvitation> {
+    const email = input.email.toLowerCase().trim();
     const [members, invitations] = await Promise.all([
       this.repo.listMembers(workspaceId),
       this.repo.listInvitations(workspaceId),
@@ -67,11 +69,18 @@ export class WorkspaceService {
     }
 
     const invitedBy = await this.repo.getMyProfileId();
-    return this.repo.createInvitation(workspaceId, { ...dto, email }, invitedBy);
+    const invitation = await this.repo.createInvitation(
+      workspaceId,
+      { email, role: COLLABORATOR_ROLE },
+      invitedBy,
+    );
+    await this.repo.sendInvitationEmail(invitation.id);
+    return invitation;
   }
 
-  changeMemberRole(memberId: string, role: MemberRole): Promise<void> {
-    return this.repo.updateMemberRole(memberId, role);
+  /** Reenvía el correo de una invitación pendiente. */
+  resendInvitation(invitationId: string): Promise<void> {
+    return this.repo.sendInvitationEmail(invitationId);
   }
 
   removeMember(memberId: string): Promise<void> {

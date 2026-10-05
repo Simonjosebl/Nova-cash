@@ -22,7 +22,6 @@ export const REGISTERABLE_TYPES: ReadonlyArray<{
 }> = [
   { type: 'expense', label: 'Nuevo gasto', emoji: '💸' },
   { type: 'income', label: 'Nuevo ingreso', emoji: '💰' },
-  { type: 'transfer', label: 'Transferencia', emoji: '🔄' },
 ];
 
 export const PAGE_SIZE = 30;

@@ -12,6 +12,7 @@ import { goalSchema, type GoalInput } from '../schemas/goal.schema';
 import { useCreateGoal, useUpdateGoal, useDeleteGoal } from '../hooks/useGoalMutations';
 import { GOAL_EMOJIS } from '../constants/goal.constants';
 import type { Goal } from '../types/goal.types';
+import { useConfirm } from '@/shared/hooks/useConfirm';
 
 interface Props {
   open: boolean;
@@ -26,6 +27,7 @@ export function GoalFormSheet({ open, onClose, workspaceId, currency, goal }: Pr
   const isEdit = !!goal;
   const create = useCreateGoal(workspaceId);
   const update = useUpdateGoal(workspaceId);
+  const confirm = useConfirm();
   const remove = useDeleteGoal(workspaceId);
 
   const {
@@ -115,10 +117,13 @@ export function GoalFormSheet({ open, onClose, workspaceId, currency, goal }: Pr
         <Button
           variant="danger"
           className="mt-3 w-full"
-          onClick={() => {
-            if (window.confirm('¿Eliminar esta meta?')) {
-              remove.mutate(goal.id, { onSuccess: onClose });
-            }
+          onClick={async () => {
+            const ok = await confirm({
+              title: '¿Eliminar esta meta?',
+              description: 'Perderás el seguimiento de su progreso.',
+              emoji: '🎯',
+            });
+            if (ok) remove.mutate(goal.id, { onSuccess: onClose });
           }}
         >
           Eliminar

@@ -9,7 +9,7 @@ Cada fase deja una app **funcional, estable e integrada**. Cada funcionalidad de
 | #   | Fase                         | Objetivo                                  | Entregables clave                                                                                                                                     | Estado                                                                                   |
 | --- | ---------------------------- | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
 | 0   | **Foundation**               | Preparar el proyecto                      | Vite+React19+TS strict, Capacitor(iOS), Supabase, Tailwind+shadcn, TanStack Query, Zustand, RHF+Zod, ESLint/Prettier/Husky/Commitlint, tema, envs, CI | ✅ Completa                                                                              |
-| 1   | **Authentication**           | Acceso seguro                             | Login, registro, magic link, recuperación, persistencia de sesión, perfil                                                                             | ✅ Completa                                                                              |
+| 1   | **Authentication**           | Acceso seguro                             | Login, registro, Google, recuperación, persistencia de sesión, perfil                                                                                 | ✅ Completa                                                                              |
 | 2   | **Workspace**                | Núcleo financiero                         | Crear/editar workspace, configuración, roles, invitaciones, gestión de miembros                                                                       | ✅ Completa                                                                              |
 | 3   | **Dashboard**                | Pantalla principal                        | Header, saldo, resumen, próximos pagos, categorías, actividad, Nova Insights, FAB                                                                     | ✅ Completa (shell)                                                                      |
 | 4   | **Accounts**                 | Cuentas                                   | Crear/editar/archivar, balance, reordenar                                                                                                             | ✅ Completa                                                                              |
@@ -30,7 +30,7 @@ Leyenda: ⬜ Pendiente · 🟡 En curso · ✅ Completa
 
 - Módulo `auth/` completo con capas `schemas → types → repository → service → hooks → pages` (Cap. 7.7).
 - **AuthRepository** aísla Supabase (traduce `User → AuthUser` y errores → `AppError`); **AuthService** agnóstico e inyectable.
-- Flujos: **login**, **registro**, **magic link**, **recuperación** y **reset** de contraseña, **perfil** (editar nombre, logout).
+- Flujos: **login**, **registro**, **Google (OAuth)**, **recuperación** y **reset** de contraseña, **perfil** (editar nombre, logout).
 - Persistencia de sesión vía Supabase + `AuthProvider` (bootstrap y `onAuthStateChange`) → store Zustand.
 - Rutas protegidas con guards (`RequireAuth` / `RedirectIfAuth`) + Splash mientras resuelve sesión.
 - Primitivos de Design System añadidos: `Input`, `Label`, `TextField`; `AppError` transversal.
@@ -171,4 +171,4 @@ Leyenda: ⬜ Pendiente · 🟡 En curso · ✅ Completa
 Documentadas como Resoluciones R-01/R-02 y ADR-063/064 en `PRODUCT.MD`:
 
 1. **Multi-Workspace por usuario** → **R-01 / ADR-063.** El MVP **sí** permite pertenecer a y alternar entre múltiples Workspaces (requisito del dominio y la colaboración). Se difiere solo la analítica **consolidada entre** Workspaces (cross-Workspace).
-2. **Dark Mode** → **R-02 / ADR-064.** Infraestructura de tema **preparada** en Fase 0 (tokens `:root`/`.dark` + store Zustand); la UI oscura **no se activa** en el MVP.
+2. **Dark Mode** → **R-02 / ADR-064.** Infraestructura de tema **preparada** en Fase 0 (tokens `:root`/`.dark` + store Zustand); la UI oscura **no se activa** en el MVP. _Actualización:_ se activa con switch de tema (auth + Perfil).

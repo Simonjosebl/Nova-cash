@@ -1,21 +1,25 @@
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { cn } from '@/lib/utils';
 import { Button } from '@/shared/ui/button';
 import { TextField } from '@/shared/ui/text-field';
 import { Label } from '@/shared/ui/label';
-import { Select } from '@/shared/ui/select';
+import { CurrencyPicker } from '@/shared/ui/currency-picker';
 import { getErrorMessage } from '@/shared/types/app-error';
 import { FormError } from '@/modules/auth/components/FormError';
-import { EmojiPicker } from '../components/EmojiPicker';
+import { EmojiPicker } from '@/shared/ui/emoji-picker';
+import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '@/shared/constants/routes';
 import { createWorkspaceSchema, type CreateWorkspaceInput } from '../schemas/workspace.schema';
+import { useWorkspaces } from '../hooks/useWorkspaces';
 import { useCreateWorkspace } from '../hooks/useWorkspaceMutations';
-import { CURRENCIES, WORKSPACE_TYPES } from '../constants/workspace.constants';
+import { SUGGESTED_EMOJIS, WORKSPACE_TYPES } from '../constants/workspace.constants';
 
 /** Crear Workspace (Cap. 6.5). Emoji → Nombre → Tipo → Moneda. Objetivo: < 30s. */
 export function CreateWorkspacePage() {
   const {
     register,
+    control,
     handleSubmit,
     watch,
     setValue,
@@ -25,6 +29,10 @@ export function CreateWorkspacePage() {
     defaultValues: { name: '', emoji: '👤', type: 'personal', currency: 'COP' },
   });
   const create = useCreateWorkspace();
+  const navigate = useNavigate();
+  // Con al menos un espacio se puede volver atrás; el primero es obligatorio (Cap. 6.2).
+  const { data: workspaces = [] } = useWorkspaces();
+  const canCancel = workspaces.length > 0;
 
   const emoji = watch('emoji');
   const type = watch('type');
@@ -77,23 +85,36 @@ export function CreateWorkspacePage() {
 
         <div className="flex flex-col gap-2">
           <Label>Emoji</Label>
-          <EmojiPicker value={emoji} onChange={(e) => setValue('emoji', e)} />
+          <EmojiPicker
+            value={emoji}
+            onChange={(e) => setValue('emoji', e)}
+            emojis={SUGGESTED_EMOJIS}
+          />
         </div>
 
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="currency">Moneda</Label>
-          <Select id="currency" {...register('currency')}>
-            {CURRENCIES.map((c) => (
-              <option key={c.code} value={c.code}>
-                {c.label}
-              </option>
-            ))}
-          </Select>
-        </div>
+        <Controller
+          control={control}
+          name="currency"
+          render={({ field }) => (
+            <CurrencyPicker
+              id="currency"
+              label="Moneda predeterminada"
+              value={field.value}
+              onChange={field.onChange}
+              error={errors.currency?.message}
+              hint="Se usa por defecto en cuentas y presupuestos. Puedes cambiarla cuando quieras; los montos registrados no se convierten."
+            />
+          )}
+        />
 
         <Button type="submit" disabled={create.isPending}>
           {create.isPending ? 'Creando…' : 'Crear espacio'}
         </Button>
+        {canCancel ? (
+          <Button type="button" variant="ghost" onClick={() => navigate(ROUTES.profile)}>
+            Cancelar
+          </Button>
+        ) : null}
       </form>
     </main>
   );

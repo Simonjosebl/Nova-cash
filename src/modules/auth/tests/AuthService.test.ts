@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Session, User } from '@supabase/supabase-js';
+import { LEGAL_INFO } from '@/shared/constants/legal';
 import { AuthService } from '../services/AuthService';
 import type { IAuthRepository } from '../repositories/AuthRepository';
 
@@ -23,7 +24,7 @@ function createRepoMock(): IAuthRepository {
   return {
     signIn: vi.fn(),
     signUp: vi.fn(),
-    sendMagicLink: vi.fn(),
+    signInWithGoogle: vi.fn(),
     sendPasswordReset: vi.fn(),
     updatePassword: vi.fn(),
     updateName: vi.fn(),
@@ -59,6 +60,17 @@ describe('AuthService', () => {
     expect(result.needsConfirmation).toBe(true);
   });
 
+  it('register guarda la versión y fecha de aceptación de políticas', async () => {
+    vi.mocked(repo.signUp).mockResolvedValue(null);
+    await service.register({ name: 'Ana', email: 'a@b.com', password: '12345678' });
+    expect(repo.signUp).toHaveBeenCalledWith(
+      expect.objectContaining({
+        policiesVersion: LEGAL_INFO.version,
+        policiesAcceptedAt: expect.any(String),
+      }),
+    );
+  });
+
   it('register no requiere confirmación si hay sesión', async () => {
     vi.mocked(repo.signUp).mockResolvedValue(fakeSession());
     const result = await service.register({ name: 'Ana', email: 'a@b.com', password: '12345678' });
@@ -74,6 +86,20 @@ describe('AuthService', () => {
     });
     await service.updateProfileName('  Ana  ');
     expect(repo.updateName).toHaveBeenCalledWith('Ana');
+  });
+
+  it('loginWithGoogle delega con la URL de retorno', async () => {
+    vi.mocked(repo.signInWithGoogle).mockResolvedValue();
+    await service.loginWithGoogle('http://localhost:5173/');
+    expect(repo.signInWithGoogle).toHaveBeenCalledWith('http://localhost:5173/');
+  });
+
+  it('login usa full_name de Google cuando no hay name', async () => {
+    vi.mocked(repo.signIn).mockResolvedValue(
+      fakeSession(fakeUser({ user_metadata: { full_name: 'Ana Google' } })),
+    );
+    const result = await service.login({ email: 'ana@nova.com', password: 'x' });
+    expect(result.user.name).toBe('Ana Google');
   });
 
   it('getCurrentSession devuelve null sin sesión', async () => {

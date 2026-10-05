@@ -1,6 +1,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from 'react-router-dom';
+import { LockKeyhole, Mail, UserRound } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { TextField } from '@/shared/ui/text-field';
 import { getErrorMessage } from '@/shared/types/app-error';
@@ -8,6 +9,9 @@ import { ROUTES } from '@/shared/constants/routes';
 import { AuthShell } from '../components/AuthShell';
 import { FormError } from '../components/FormError';
 import { FormSuccess } from '../components/FormSuccess';
+import { GoogleButton } from '../components/GoogleButton';
+import { AuthDivider } from '../components/AuthDivider';
+import { PolicyConsent } from '../components/PolicyConsent';
 import { registerSchema, type RegisterInput } from '../schemas/auth.schema';
 import { useRegister } from '../hooks/useRegister';
 
@@ -16,7 +20,10 @@ export function RegisterPage() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<RegisterInput>({ resolver: zodResolver(registerSchema) });
+  } = useForm<RegisterInput>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: { acceptPolicies: false },
+  });
   const signUp = useRegister();
 
   const onSubmit = handleSubmit((data) => signUp.mutate(data));
@@ -39,12 +46,16 @@ export function RegisterPage() {
         <FormSuccess message="Te enviamos un correo para confirmar tu cuenta. Revísalo para continuar." />
       ) : null}
 
+      <GoogleButton />
+      <AuthDivider />
+
       <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
         {signUp.isError ? <FormError message={getErrorMessage(signUp.error)} /> : null}
 
         <TextField
           label="Nombre"
           autoComplete="name"
+          icon={UserRound}
           placeholder="Tu nombre"
           error={errors.name?.message}
           {...register('name')}
@@ -53,6 +64,7 @@ export function RegisterPage() {
           label="Correo"
           type="email"
           autoComplete="email"
+          icon={Mail}
           placeholder="tu@correo.com"
           error={errors.email?.message}
           {...register('email')}
@@ -61,7 +73,8 @@ export function RegisterPage() {
           label="Contraseña"
           type="password"
           autoComplete="new-password"
-          placeholder="Mínimo 8 caracteres"
+          icon={LockKeyhole}
+          placeholder="Mínimo 10, con letras y números"
           error={errors.password?.message}
           {...register('password')}
         />
@@ -69,10 +82,13 @@ export function RegisterPage() {
           label="Confirmar contraseña"
           type="password"
           autoComplete="new-password"
+          icon={LockKeyhole}
           placeholder="Repite tu contraseña"
           error={errors.confirmPassword?.message}
           {...register('confirmPassword')}
         />
+
+        <PolicyConsent error={errors.acceptPolicies?.message} {...register('acceptPolicies')} />
 
         <Button type="submit" disabled={signUp.isPending}>
           {signUp.isPending ? 'Creando cuenta…' : 'Crear cuenta'}

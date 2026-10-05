@@ -9,7 +9,8 @@ export function useLogout() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => authService.logout(),
-    onSuccess: () => {
+    // Aunque falle la red, se limpia el estado local y se sale (R-18).
+    onSettled: () => {
       queryClient.clear();
       navigate(ROUTES.login, { replace: true });
     },

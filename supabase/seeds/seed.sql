@@ -65,8 +65,8 @@ begin
     (ws_id, acc_cash, cat_transport, 'expense', 12000, 'Bus', current_date - 1);
 
   -- Presupuesto y meta demo
-  insert into public.budgets (workspace_id, category_id, amount, warning_percentage)
-  values (ws_id, cat_food, 600000, 80);
+  insert into public.budgets (workspace_id, category_id, amount, currency, warning_percentage)
+  values (ws_id, cat_food, 600000, 'COP', 80);
 
   insert into public.goals (workspace_id, name, emoji, target_amount, target_date)
   values (ws_id, 'Viaje a Japón', '✈️', 8000000, current_date + 365);

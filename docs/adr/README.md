@@ -33,4 +33,4 @@ Las 62 decisiones están definidas en `PRODUCT.MD`. Este índice las consolida. 
 ## Resoluciones de ambigüedades (Cap. 12)
 
 - **063** El MVP soporta que un usuario pertenezca a y alterne entre múltiples Workspaces; se difiere solo la analítica consolidada cross-Workspace (Resolución R-01).
-- **064** El tema oscuro se prepara a nivel de arquitectura pero no se activa en la UI del MVP (Resolución R-02).
+- **064** El tema oscuro se prepara a nivel de arquitectura; actualizado: se activa en la UI con un switch de tema (Resolución R-02, actualización).

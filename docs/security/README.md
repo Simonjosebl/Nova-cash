@@ -6,7 +6,7 @@
 
 Usuario autenticado → pertenece al Workspace → rol permitido → recurso existente y no eliminado → auditoría registrada.
 
-- **Auth:** Supabase Auth (email+password, magic link, Apple Sign In en iOS). El usuario nunca toca PostgreSQL directamente.
+- **Auth:** Supabase Auth (email+password, Google OAuth, Apple Sign In en iOS). El usuario nunca toca PostgreSQL directamente.
 - **Autorización** depende del **Workspace**, no del usuario.
 - **RLS** obligatorio en todas las tablas; policies validan `auth.uid()` + `workspace_members` + rol + estado.
 - **Aislamiento:** toda consulta filtra por `workspace_id` y `deleted_at IS NULL`.
